@@ -8,12 +8,12 @@ export default function Home() {
   style={{ backgroundImage: "url('/forest-bg.jpg')" }}
 >
   {/* Overlay */}
-  <div className="absolute inset-0 bg-black/65"></div>
+  <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/75 to-black/80"></div>
 
   <div className="relative z-10 w-full max-w-5xl px-6">
 
-    <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-      Discover Verified Industrial Suppliers
+    <h1 className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] font-bold text-white mb-6">
+      The Industrial Supplier Intelligence Platform
     </h1>
 
     <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
@@ -45,6 +45,9 @@ export default function Home() {
       <button className="mt-6 bg-black text-white px-6 py-3 rounded-xl">
         Search Suppliers
       </button>
+<p className="text-xs text-gray-500 mt-4 tracking-wide">
+  Official ABR Integration · AI Capability Mapping · Structured Industry Taxonomy
+</p>
     </div>
 
   </div>
