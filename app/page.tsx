@@ -12,10 +12,6 @@ export default function Home() {
 
   <div className="relative z-10 w-full max-w-5xl px-6">
 
-    <h1 className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] font-bold text-white mb-6">
-      The Industrial Supplier Intelligence Platform
-    </h1>
-
     <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
       Connected directly to the Australian Business Register.
       AI-driven capability mapping powered by intelligent domain analysis.
