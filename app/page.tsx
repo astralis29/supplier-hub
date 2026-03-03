@@ -69,73 +69,82 @@ export default function Home() {
       </section>
 
 
-      {/* FEATURE SECTION */}
-      <section className="py-24 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
+ {/* FEATURE SECTION - ENTERPRISE */}
+<section className="py-24 bg-white border-t border-gray-200">
+  <div className="max-w-6xl mx-auto px-6">
 
-          {/* INDUSTRY NEWS (spans 2 columns) */}
-          <div className="md:col-span-2 bg-white p-10 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition relative overflow-hidden">
+    {/* SECTION HEADER */}
+    <div className="mb-16">
+      <h2 className="text-3xl font-semibold text-gray-900 mb-4">
+        Platform Intelligence Infrastructure
+      </h2>
+      <p className="text-gray-600 max-w-2xl">
+        Verified supplier data, structured industry taxonomy and
+        real-time industrial intelligence powering procurement decisions.
+      </p>
+    </div>
 
-            {/* Left Accent */}
-            <div className="absolute left-0 top-0 h-full w-1 bg-red-600"></div>
+    {/* GRID */}
+    <div className="grid md:grid-cols-2 gap-x-16 gap-y-12">
 
-            {/* Live Badge */}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
-              </span>
-
-              <span className="text-xs font-semibold tracking-widest text-red-600 uppercase">
-                Live Industry Feed
-              </span>
-            </div>
-
-            <h3 className="font-semibold text-2xl mb-4 text-gray-900">
-              Industry News Intelligence
-            </h3>
-
-            <p className="text-gray-600 text-lg leading-relaxed max-w-2xl">
-              Real-time project announcements, regulatory updates and supply chain
-              developments across key industrial sectors.
-            </p>
-          </div>
-
-          {/* VERIFIED */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <h3 className="font-semibold text-lg mb-3">
-              Verified Business Data
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Connected directly to the Business Register for accurate and up-to-date records.
-            </p>
-          </div>
-
-          {/* AI */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <h3 className="font-semibold text-lg mb-3">
-              AI Capability Mapping
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Automated domain intelligence identifies supplier services,
-              certifications and operational strengths.
-            </p>
-          </div>
-
-          {/* CLASSIFICATION */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <h3 className="font-semibold text-lg mb-3">
-              Industry Classification
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Structured categorisation across mining, manufacturing,
-              engineering and industrial supply chains.
-            </p>
-          </div>
-
+      {/* INDUSTRY NEWS */}
+      <div className="border-l-4 border-gray-900 pl-6">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="h-2 w-2 bg-gray-900 rounded-full"></span>
+          <span className="text-xs uppercase tracking-widest text-gray-500">
+            Live Industry Intelligence
+          </span>
         </div>
-      </section>
 
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          Real-Time Industrial Signals
+        </h3>
+
+        <p className="text-gray-600 leading-relaxed">
+          Project announcements, regulatory changes and supply chain
+          developments mapped to structured industry categories.
+        </p>
+      </div>
+
+      {/* VERIFIED DATA */}
+      <div className="border-l-4 border-gray-300 pl-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          Verified Business Data
+        </h3>
+
+        <p className="text-gray-600 leading-relaxed">
+          Direct integration with the National Business Register ensures
+          entity accuracy, status validation and structured records.
+        </p>
+      </div>
+
+      {/* AI MAPPING */}
+      <div className="border-l-4 border-gray-300 pl-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          AI Capability Mapping
+        </h3>
+
+        <p className="text-gray-600 leading-relaxed">
+          Automated domain intelligence extracts supplier capabilities,
+          certifications and operational indicators at scale.
+        </p>
+      </div>
+
+      {/* CLASSIFICATION */}
+      <div className="border-l-4 border-gray-300 pl-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          Industry Classification
+        </h3>
+
+        <p className="text-gray-600 leading-relaxed">
+          Structured taxonomy across mining, manufacturing, engineering
+          and industrial supply chains.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
 
       {/* FOOTER */}
       <footer className="py-12 bg-black text-gray-400 text-center text-sm">
