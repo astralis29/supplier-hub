@@ -67,6 +67,16 @@ export default function Home() {
 </section>
       {/* FEATURE CARDS */}
       <section className="py-24 bg-gray-50">
+
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+  <h3 className="font-semibold text-lg mb-3">
+    Industry News Intelligence
+  </h3>
+  <p className="text-gray-600 leading-relaxed">
+    Stay ahead with real-time news, major project announcements and
+    supply chain developments across key industrial sectors.
+  </p>
+</div>
         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
 
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
