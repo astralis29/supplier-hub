@@ -32,32 +32,28 @@ export default function RootLayout({
         <div className="min-h-screen flex flex-col">
 
           {/* Navigation */}
-          <nav className="bg-black text-white py-5">
-            <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
+<nav className="bg-black text-white py-4">
+  <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
 
-              {/* Left spacer (keeps logo truly centered) */}
-              <div className="w-1/3" />
+    {/* Logo */}
+    <div className="font-bold text-lg whitespace-nowrap">
+      What's the Supplier?
+    </div>
 
-              {/* Center Logo */}
-              <div className="w-1/3 text-center font-bold text-xl tracking-wide">
-                Whats the Supplier?
-              </div>
+    {/* Desktop Menu */}
+    <div className="hidden md:flex space-x-8 text-sm">
+      <a href="/" className="hover:text-gray-300 transition">Home</a>
+      <a href="/search" className="hover:text-gray-300 transition">Search</a>
+      <a href="/suppliers" className="hover:text-gray-300 transition">Suppliers</a>
+    </div>
 
-              {/* Right Navigation */}
-              <div className="w-1/3 flex justify-end space-x-6 text-sm">
-                <a href="/" className="hover:text-gray-300 transition">
-                  Home
-                </a>
-                <a href="/search" className="hover:text-gray-300 transition">
-                  Search
-                </a>
-                <a href="/suppliers" className="hover:text-gray-300 transition">
-                  Suppliers
-                </a>
-              </div>
+    {/* Mobile Menu Button */}
+    <div className="md:hidden">
+      <button className="text-xl">☰</button>
+    </div>
 
-            </div>
-          </nav>
+  </div>
+</nav>
 
           {/* Page Content */}
           <main className="flex-1">
