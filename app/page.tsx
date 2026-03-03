@@ -12,10 +12,18 @@ export default function Home() {
 
   <div className="relative z-10 w-full max-w-5xl px-6">
 
-    <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
-      Connected directly to the Australian Business Register.
-      AI-driven capability mapping powered by intelligent domain analysis.
-    </p>
+  <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight leading-tight">
+    Discover Verified Industrial Suppliers
+    <br />
+    <span className="text-gray-300">
+      with Structured Capability Intelligence
+    </span>
+  </h1>
+
+  <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
+    Connected directly to the Australian Business Register.
+    AI-driven capability mapping powered by intelligent domain analysis.
+  </p>
 
     {/* SEARCH CARD */}
     <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
