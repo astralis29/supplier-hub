@@ -66,51 +66,48 @@ export default function Home() {
   </div>
 </section>
       {/* FEATURE CARDS */}
-      <section className="py-24 bg-gray-50">
+<section className="py-24 bg-gray-50">
+  <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-4 gap-8">
 
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-  <h3 className="font-semibold text-lg mb-3">
-    Industry News Intelligence
-  </h3>
-  <p className="text-gray-600 leading-relaxed">
-    Stay ahead with real-time news, major project announcements and
-    supply chain developments across key industrial sectors.
-  </p>
-</div>
-        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
+    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+      <h3 className="font-semibold text-lg mb-3">
+        Industry News Intelligence
+      </h3>
+      <p className="text-gray-600 leading-relaxed">
+        Stay ahead with real-time news, major project announcements and
+        supply chain developments across key industrial sectors.
+      </p>
+    </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <h3 className="font-semibold text-lg mb-3">
-              Verified Business Data
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Connected directly to the Business Register for
-              accurate and up-to-date entity records.
-            </p>
-          </div>
+    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+      <h3 className="font-semibold text-lg mb-3">
+        Verified Business Data
+      </h3>
+      <p className="text-gray-600 leading-relaxed">
+        Connected directly to the Business Register for accurate records.
+      </p>
+    </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <h3 className="font-semibold text-lg mb-3">
-              AI Capability Mapping
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Automated domain intelligence identifies supplier services,
-              certifications and operational strengths.
-            </p>
-          </div>
+    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+      <h3 className="font-semibold text-lg mb-3">
+        AI Capability Mapping
+      </h3>
+      <p className="text-gray-600 leading-relaxed">
+        Automated domain intelligence identifies supplier services and strengths.
+      </p>
+    </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <h3 className="font-semibold text-lg mb-3">
-              Industry Classification
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Structured categorisation across manufacturing, mining,
-              engineering and industrial supply chains.
-            </p>
-          </div>
+    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+      <h3 className="font-semibold text-lg mb-3">
+        Industry Classification
+      </h3>
+      <p className="text-gray-600 leading-relaxed">
+        Structured categorisation across key industrial supply chains.
+      </p>
+    </div>
 
-        </div>
-      </section>
+  </div>
+</section>
 
 
       {/* FOOTER */}
