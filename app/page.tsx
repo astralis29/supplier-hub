@@ -21,8 +21,8 @@ export default function Home() {
 </h1>
 
   <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
-    Connected directly to the Australian Business Register.
-    AI-driven capability mapping powered by intelligent domain analysis.
+    Connected directly to the National Business Register.
+    AI-driven capability mapping powered by intelligent analysis.
   </p>
 
     {/* SEARCH CARD */}
@@ -50,7 +50,7 @@ export default function Home() {
         Search Suppliers
       </button>
 <p className="text-xs text-gray-500 mt-4 tracking-wide">
-  Official ABR Integration · AI Capability Mapping · Structured Industry Taxonomy
+  Official Business Register Integration · AI Capability Mapping · Structured Industry Taxonomy
 </p>
     </div>
 
@@ -65,7 +65,7 @@ export default function Home() {
               Verified Business Data
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Connected directly to the Australian Business Register for
+              Connected directly to the Business Register for
               accurate and up-to-date entity records.
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function Home() {
               Industry Classification
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Structured categorisation across mining, manufacturing,
+              Structured categorisation across manufacturing, mining,
               engineering and industrial supply chains.
             </p>
           </div>
