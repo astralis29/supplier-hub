@@ -47,11 +47,6 @@ export default function RootLayout({
       <a href="/suppliers" className="hover:text-gray-300 transition">Suppliers</a>
     </div>
 
-    {/* Mobile Menu Button */}
-    <div className="md:hidden">
-      <button className="text-xl">☰</button>
-    </div>
-
   </div>
 </nav>
 
