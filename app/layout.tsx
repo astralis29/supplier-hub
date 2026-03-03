@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: {
-    default: "Supplier Gateway",
-    template: "%s | Supplier Gateway"
+    default: "What's the Supplier?",
+    template: "%s | What's the Supplier?"
   },
   description:
     "Discover verified industrial suppliers by country, industry and capability. Powered by ABR and intelligent domain analysis.",
