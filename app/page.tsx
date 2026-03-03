@@ -4,22 +4,49 @@ export default function Home() {
 
       {/* HERO */}
 <section
-  className="relative min-h-[90vh] flex items-center justify-center text-center bg-cover bg-center"
+  className="relative min-h-[100vh] flex items-center justify-center text-center bg-cover bg-center"
   style={{ backgroundImage: "url('/forest-bg.jpg')" }}
 >
-  {/* Dark overlay */}
-  <div className="absolute inset-0 bg-black/60"></div>
+  {/* Overlay */}
+  <div className="absolute inset-0 bg-black/65"></div>
 
-  {/* Content */}
-  <div className="relative z-10 text-white max-w-4xl px-6">
-    <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+  <div className="relative z-10 w-full max-w-5xl px-6">
+
+    <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
       Discover Verified Industrial Suppliers
     </h1>
 
-    <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-      Connected directly to the Australian Business Register. AI-driven
-      capability mapping powered by intelligent domain analysis.
+    <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
+      Connected directly to the Australian Business Register.
+      AI-driven capability mapping powered by intelligent domain analysis.
     </p>
+
+    {/* SEARCH CARD */}
+    <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
+      <h2 className="text-left text-xl font-semibold mb-6 text-gray-800">
+        Search Suppliers
+      </h2>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <select className="border rounded-xl p-4">
+          <option>Australia</option>
+        </select>
+
+        <select className="border rounded-xl p-4">
+          <option>Mining</option>
+        </select>
+
+        <input
+          placeholder="Capability (e.g. Heavy Fabrication)"
+          className="border rounded-xl p-4"
+        />
+      </div>
+
+      <button className="mt-6 bg-black text-white px-6 py-3 rounded-xl">
+        Search Suppliers
+      </button>
+    </div>
+
   </div>
 </section>
       {/* SEARCH CARD */}
