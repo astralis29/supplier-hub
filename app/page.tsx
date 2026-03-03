@@ -49,36 +49,6 @@ export default function Home() {
 
   </div>
 </section>
- 
-      {/* TRUST STRIP */}
-      <section className="mt-24 py-10 bg-white border-t border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-3 gap-8 text-center text-sm text-gray-600">
-
-          <div>
-            <div className="font-semibold text-black mb-1">
-              ABR Verified
-            </div>
-            Official Australian Business Register integration
-          </div>
-
-          <div>
-            <div className="font-semibold text-black mb-1">
-              AI Capability Mapping
-            </div>
-            Intelligent classification of technical services
-          </div>
-
-          <div>
-            <div className="font-semibold text-black mb-1">
-              Industry Structured
-            </div>
-            Standardised taxonomy across sectors
-          </div>
-
-        </div>
-      </section>
-
-
       {/* FEATURE CARDS */}
       <section className="py-24 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
