@@ -124,7 +124,7 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer className="py-12 bg-black text-gray-400 text-center text-sm">
-        © {new Date().getFullYear()} Supplier Gateway · Enterprise Procurement Intelligence
+        © {new Date().getFullYear()} What's the Supplier? · Enterprise Procurement Intelligence
       </footer>
 
     </main>
