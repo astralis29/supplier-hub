@@ -3,28 +3,25 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
       {/* HERO */}
-      <section className="py-28 px-6 text-center">
-        <div className="max-w-4xl mx-auto">
+<section
+  className="relative min-h-[90vh] flex items-center justify-center text-center bg-cover bg-center"
+  style={{ backgroundImage: "url('/forest-bg.jpg')" }}
+>
+  {/* Dark overlay */}
+  <div className="absolute inset-0 bg-black/60"></div>
 
-          <div className="inline-block mb-6 px-4 py-2 bg-black text-white text-sm rounded-full">
-            Enterprise Supplier Intelligence
-          </div>
+  {/* Content */}
+  <div className="relative z-10 text-white max-w-4xl px-6">
+    <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+      Discover Verified Industrial Suppliers
+    </h1>
 
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
-            Discover Verified Industrial Suppliers
-            <span className="block text-gray-500 mt-2">
-              with Structured Capability Intelligence
-            </span>
-          </h1>
-
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Connected directly to the Australian Business Register.
-            AI-driven capability mapping powered by intelligent domain analysis.
-          </p>
-        </div>
-      </section>
-
-
+    <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+      Connected directly to the Australian Business Register. AI-driven
+      capability mapping powered by intelligent domain analysis.
+    </p>
+  </div>
+</section>
       {/* SEARCH CARD */}
       <section className="max-w-5xl mx-auto px-6 -mt-12">
         <div className="bg-white shadow-2xl rounded-2xl p-10 border border-gray-200">
