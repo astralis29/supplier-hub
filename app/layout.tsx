@@ -12,44 +12,60 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: {
     default: "What's the Supplier?",
-    template: "%s | What's the Supplier?"
+    template: "%s | What's the Supplier?",
   },
   description:
     "Discover verified industrial suppliers by country, industry and capability. Powered by ABR and intelligent domain analysis.",
-}
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-<body>
-  <div className="min-h-screen flex flex-col">
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <div className="min-h-screen flex flex-col">
 
-    {/* Navigation */}
-    <nav className="bg-black text-white px-6 py-4 flex justify-between">
-      <div className="font-bold text-lg">
-        Supplier Gateway
-      </div>
-      <div className="space-x-6">
-        <a href="/" className="hover:underline">Home</a>
-        <a href="/search" className="hover:underline">Search</a>
-        <a href="/suppliers" className="hover:underline">Suppliers</a>
-      </div>
-    </nav>
+          {/* Navigation */}
+          <nav className="bg-black text-white py-5">
+            <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
 
-    {/* Page Content */}
-    <main className="flex-1 p-8">
-      {children}
-    </main>
+              {/* Left spacer (keeps logo truly centered) */}
+              <div className="w-1/3" />
 
-  </div>
-</body>
+              {/* Center Logo */}
+              <div className="w-1/3 text-center font-bold text-xl tracking-wide">
+                Supplier Gateway
+              </div>
+
+              {/* Right Navigation */}
+              <div className="w-1/3 flex justify-end space-x-6 text-sm">
+                <a href="/" className="hover:text-gray-300 transition">
+                  Home
+                </a>
+                <a href="/search" className="hover:text-gray-300 transition">
+                  Search
+                </a>
+                <a href="/suppliers" className="hover:text-gray-300 transition">
+                  Suppliers
+                </a>
+              </div>
+
+            </div>
+          </nav>
+
+          {/* Page Content */}
+          <main className="flex-1">
+            {children}
+          </main>
+
+        </div>
+      </body>
     </html>
   );
 }
