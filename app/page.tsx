@@ -2,17 +2,17 @@
 <section className="py-24 bg-gray-50">
   <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
 
-    {/* INDUSTRY NEWS - spans 2 columns */}
+    {/* INDUSTRY NEWS (spans 2 columns) */}
     <div className="md:col-span-2 bg-white p-10 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition relative overflow-hidden">
 
-      {/* Accent line */}
-      <div className="absolute left-0 top-0 h-full w-1 bg-red-600"></div>
+      {/* Left Accent */}
+      <div className="absolute left-0 top-0 h-full w-1 bg-red-600" />
 
-      {/* Badge */}
+      {/* Live Badge */}
       <div className="flex items-center gap-3 mb-4">
         <span className="relative flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600" />
         </span>
 
         <span className="text-xs font-semibold tracking-widest text-red-600 uppercase">
