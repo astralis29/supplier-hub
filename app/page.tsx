@@ -1,3 +1,11 @@
+const industries = [
+  "Mining",
+  "Manufacturing",
+  "Energy",
+  "Construction",
+  "Engineering",
+  "Logistics",
+];
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
@@ -36,10 +44,11 @@ export default function Home() {
           <option>Australia</option>
         </select>
 
-        <select className="border rounded-xl p-4">
-          <option>Mining</option>
-        </select>
-
+<select className="border rounded-xl p-4">
+  {industries.map((industry) => (
+    <option key={industry}>{industry}</option>
+  ))}
+</select>
         <input
           placeholder="Capability (e.g. Heavy Fabrication)"
           className="border rounded-xl p-4"
