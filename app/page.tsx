@@ -49,36 +49,7 @@ export default function Home() {
 
   </div>
 </section>
-      {/* SEARCH CARD */}
-      <section className="max-w-5xl mx-auto px-6 -mt-12">
-        <div className="bg-white shadow-2xl rounded-2xl p-10 border border-gray-200">
-
-          <h2 className="text-xl font-semibold mb-6 text-left">
-            Search Suppliers
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            <select className="border rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-black">
-              <option>Australia</option>
-            </select>
-
-            <select className="border rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-black">
-              <option>Mining</option>
-            </select>
-
-            <input
-              placeholder="Capability (e.g. Heavy Fabrication)"
-              className="border rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
-
-          <button className="mt-8 bg-black text-white px-8 py-4 rounded-xl hover:bg-gray-800 transition font-medium">
-            Search Suppliers
-          </button>
-        </div>
-      </section>
-
-
+ 
       {/* TRUST STRIP */}
       <section className="mt-24 py-10 bg-white border-t border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-3 gap-8 text-center text-sm text-gray-600">
