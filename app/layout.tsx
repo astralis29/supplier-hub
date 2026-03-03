@@ -40,7 +40,7 @@ export default function RootLayout({
 
               {/* Center Logo */}
               <div className="w-1/3 text-center font-bold text-xl tracking-wide">
-                Supplier Gateway
+                Whats the Supplier?
               </div>
 
               {/* Right Navigation */}
