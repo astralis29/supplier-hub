@@ -1,23 +1,25 @@
+export const runtime = "nodejs";
+
 import Parser from "rss-parser";
 import { createClient } from "@supabase/supabase-js";
 
 const parser = new Parser({
   requestOptions: {
     headers: {
-      "User-Agent": "rss-parser"
+      "User-Agent": "Mozilla/5.0"
     }
   }
 });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // server-side service role
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 function cleanHtml(html: string | undefined) {
   if (!html) return "";
   return html
-    .replace(/<[^>]*>?/gm, "") // remove html tags
+    .replace(/<[^>]*>?/gm, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -39,8 +41,7 @@ export async function GET() {
       return Response.json({ message: "No sources found" });
     }
 
-
-    // 2️⃣ Load keywords ONCE (huge performance improvement)
+    // 2️⃣ Load keywords once
     const { data: keywords, error: keywordError } = await supabase
       .from("industry_keywords")
       .select("industry_id, keyword");
@@ -53,24 +54,35 @@ export async function GET() {
       return Response.json({ message: "No keywords configured" });
     }
 
+    let processedFeeds = 0;
+    let insertedArticles = 0;
 
-    // 3️⃣ Loop RSS feeds
+    // 3️⃣ Loop feeds
     for (const source of sources) {
 
       let feed;
 
       try {
-        const response = await fetch(source.url, {
-  headers: { "User-Agent": "Mozilla/5.0" }
-});
 
-if (!response.ok) {
-  console.log("Feed request failed:", source.url);
-  continue;
-}
+        // remove accidental # at end of URL
+        const cleanUrl = source.url.replace("#", "");
 
-const xml = await response.text();
-feed = await parser.parseString(xml);
+        const response = await fetch(cleanUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0"
+          }
+        });
+
+        if (!response.ok) {
+          console.log("Feed request failed:", cleanUrl);
+          continue;
+        }
+
+        const xml = await response.text();
+        feed = await parser.parseString(xml);
+
+        processedFeeds++;
+
       } catch (err) {
         console.log("RSS failed:", source.url);
         continue;
@@ -83,43 +95,42 @@ feed = await parser.parseString(xml);
 
         const combinedText = `${title} ${description}`.toLowerCase();
 
-
         // 4️⃣ Match keyword
-const match = keywords.find(k => {
-  const keyword = k.keyword?.toLowerCase().trim();
-  return keyword && combinedText.includes(keyword);
-});
+        const match = keywords.find(k => {
+          const keyword = k.keyword?.toLowerCase().trim();
+          return keyword && combinedText.includes(keyword);
+        });
 
         if (!match) continue;
 
-
-        // skip if no guid
         if (!item.guid && !item.link) continue;
 
-
         // 5️⃣ Insert article
-        await supabase.from("industry_news").upsert(
-          {
-            industry_id: match.industry_id,
-            rss_source_id: source.id,
-            title,
-            description,
-            url: item.link,
-            guid: item.guid || item.link,
-            published_at: item.pubDate
-              ? new Date(item.pubDate)
-              : null
-          },
-          {
-            onConflict: "guid"
-          }
-        );
+        const { error } = await supabase
+          .from("industry_news")
+          .upsert(
+            {
+              industry_id: match.industry_id,
+              rss_source_id: source.id,
+              title,
+              description,
+              url: item.link,
+              guid: item.guid || item.link,
+              published_at: item.pubDate
+                ? new Date(item.pubDate)
+                : null
+            },
+            { onConflict: "guid" }
+          );
+
+        if (!error) insertedArticles++;
       }
     }
 
     return Response.json({
       success: true,
-      feedsProcessed: sources.length
+      feedsProcessed: processedFeeds,
+      articlesInserted: insertedArticles
     });
 
   } catch (error) {
