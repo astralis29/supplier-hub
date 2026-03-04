@@ -91,40 +91,50 @@ export default async function Home() {
       </p>
     </div>
 
-    <div className="grid md:grid-cols-2 gap-6">
+ <div className="grid md:grid-cols-2 gap-6">
 
-      {signals?.map((signal: any) => (
+{signals && signals.length > 0 ? (
+
+signals.map((signal: any) => (
 
 <div
   key={signal.title}
   className="bg-white border rounded-xl p-6 hover:shadow-md transition"
 >
 
-          <h3 className="font-semibold text-lg text-gray-900 mb-2">
-            {signal.title}
-          </h3>
+<h3 className="font-semibold text-lg text-gray-900 mb-2">
+{signal.title}
+</h3>
 
-          <p className="text-gray-600 text-sm mb-4">
-            {signal.description?.slice(0,120)}...
-          </p>
+<p className="text-gray-600 text-sm mb-4">
+{signal.description?.slice(0,120)}...
+</p>
 
-          <div className="flex items-center text-xs text-gray-500">
+<div className="flex items-center text-xs text-gray-500">
 
-            <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded mr-3">
-              Industry
-            </span>
+<span className="bg-blue-50 text-blue-700 px-2 py-1 rounded mr-3">
+Industry
+</span>
 
-            <span>
-              {new Date(signal.published_at).toLocaleDateString()}
-            </span>
+<span>
+{new Date(signal.published_at).toLocaleDateString()}
+</span>
 
-          </div>
+</div>
 
-        </div>
+</div>
 
-      ))}
+))
 
-    </div>
+) : (
+
+<div className="text-gray-500">
+No industry signals yet.
+</div>
+
+)}
+
+</div>
 
   </div>
 
