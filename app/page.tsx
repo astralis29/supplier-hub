@@ -1,3 +1,5 @@
+import { getIndustrySignals } from "@/lib/data";
+
 const industries = [
   "Mining",
   "Manufacturing",
@@ -7,7 +9,10 @@ const industries = [
   "Logistics",
 ];
 
-export default function Home() {
+export default async function Home() {
+
+  const signals = await getIndustrySignals();
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
@@ -16,7 +21,6 @@ export default function Home() {
         className="relative min-h-[100vh] flex items-center justify-center text-center bg-cover bg-center"
         style={{ backgroundImage: "url('/forest-bg.jpg')" }}
       >
-        {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/75 to-black/80"></div>
 
         <div className="relative z-10 w-full max-w-5xl px-6">
@@ -69,11 +73,68 @@ export default function Home() {
       </section>
 
 
+{/* LIVE INDUSTRY SIGNALS */}
+<section className="py-20 bg-gray-50 border-t border-gray-200">
+
+  <div className="max-w-6xl mx-auto px-6">
+
+    <div className="mb-12">
+      <h2 className="text-3xl font-semibold text-gray-900 mb-3">
+        Live Industry Signals
+      </h2>
+
+      <p className="text-gray-600 max-w-2xl">
+        Real-time industrial intelligence sourced from global
+        news signals and mapped to structured industry categories.
+      </p>
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-6">
+
+      {signals?.map((signal: any) => (
+
+        <a
+          key={signal.url}
+          href={signal.url}
+          target="_blank"
+          className="bg-white border rounded-xl p-6 hover:shadow-md transition"
+        >
+
+          <h3 className="font-semibold text-lg text-gray-900 mb-2">
+            {signal.title}
+          </h3>
+
+          <p className="text-gray-600 text-sm mb-4">
+            {signal.description?.slice(0,120)}...
+          </p>
+
+          <div className="flex items-center text-xs text-gray-500">
+
+            <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded mr-3">
+              {signal.industries?.name || "Industry"}
+            </span>
+
+            <span>
+              {new Date(signal.published_at).toLocaleDateString()}
+            </span>
+
+          </div>
+
+        </a>
+
+      ))}
+
+    </div>
+
+  </div>
+
+</section>
+
+
  {/* FEATURE SECTION - ENTERPRISE */}
 <section className="py-24 bg-white border-t border-gray-200">
   <div className="max-w-6xl mx-auto px-6">
 
-    {/* SECTION HEADER */}
     <div className="mb-16">
       <h2 className="text-3xl font-semibold text-gray-900 mb-4">
         Platform Intelligence Infrastructure
@@ -84,10 +145,8 @@ export default function Home() {
       </p>
     </div>
 
-    {/* GRID */}
     <div className="grid md:grid-cols-2 gap-x-16 gap-y-12">
 
-      {/* INDUSTRY NEWS */}
       <div className="border-l-4 border-gray-900 pl-6">
         <div className="flex items-center gap-2 mb-3">
           <span className="h-2 w-2 bg-gray-900 rounded-full"></span>
@@ -106,7 +165,6 @@ export default function Home() {
         </p>
       </div>
 
-      {/* VERIFIED DATA */}
       <div className="border-l-4 border-gray-300 pl-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
           Verified Business Data
@@ -118,7 +176,6 @@ export default function Home() {
         </p>
       </div>
 
-      {/* AI MAPPING */}
       <div className="border-l-4 border-gray-300 pl-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
           AI Capability Mapping
@@ -130,7 +187,6 @@ export default function Home() {
         </p>
       </div>
 
-      {/* CLASSIFICATION */}
       <div className="border-l-4 border-gray-300 pl-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
           Industry Classification
@@ -146,11 +202,11 @@ export default function Home() {
   </div>
 </section>
 
-      {/* FOOTER */}
-      <footer className="py-12 bg-black text-gray-400 text-center text-sm">
-        © {new Date().getFullYear()} What's the Supplier? · Enterprise Procurement Intelligence
-      </footer>
 
-    </main>
+<footer className="py-12 bg-black text-gray-400 text-center text-sm">
+  © {new Date().getFullYear()} What's the Supplier? · Enterprise Procurement Intelligence
+</footer>
+
+</main>
   );
 }
