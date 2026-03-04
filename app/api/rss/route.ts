@@ -92,7 +92,12 @@ export async function GET() {
 
         try {
           console.log("Fetching RSS:", cleanUrl);
-xml = await fetchRSS(cleanUrl);
+try {
+  xml = await fetchRSS(cleanUrl);
+} catch (err) {
+  console.log("RSS FAILED:", cleanUrl);
+  continue;
+}
         } catch (err) {
           console.log("RSS DOWNLOAD FAILED:", cleanUrl);
           continue;
