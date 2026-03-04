@@ -9,7 +9,12 @@ const parser = new Parser();
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    global: {
+      fetch: (...args) => fetch(...args)
+    }
+  }
 );
 
 function cleanHtml(html: string | undefined) {
