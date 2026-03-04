@@ -54,7 +54,17 @@ export async function GET() {
       let feed;
 
       try {
-        feed = await parser.parseURL(source.url);
+        const response = await fetch(source.url, {
+  headers: { "User-Agent": "Mozilla/5.0" }
+});
+
+if (!response.ok) {
+  console.log("Feed request failed:", source.url);
+  continue;
+}
+
+const xml = await response.text();
+feed = await parser.parseString(xml);
       } catch (err) {
         console.log("RSS failed:", source.url);
         continue;
