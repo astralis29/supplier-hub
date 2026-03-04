@@ -168,13 +168,14 @@ export async function GET() {
       articlesInserted: insertedArticles
     });
 
-  } catch (error) {
+  } catch (error: any) {
 
-    console.error(error);
+  console.error("RSS ROUTE ERROR:", error);
 
-    return Response.json(
-      { error: "RSS ingestion failed" },
-      { status: 500 }
-    );
-  }
-}
+  return Response.json(
+    {
+      error: error?.message || "Unknown error",
+      stack: error?.stack || null
+    },
+    { status: 500 }
+ ); } }
