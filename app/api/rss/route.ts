@@ -22,6 +22,38 @@ function cleanHtml(html: string | undefined) {
   return html.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
 }
 
+/* INDUSTRY RELEVANCE FILTER */
+
+const industryTerms = [
+  "mine",
+  "mining",
+  "lithium",
+  "copper",
+  "nickel",
+  "iron ore",
+  "steel",
+  "factory",
+  "manufacturing",
+  "plant",
+  "energy",
+  "gas",
+  "oil",
+  "construction",
+  "infrastructure",
+  "supply chain",
+  "logistics",
+  "port",
+  "engineering",
+  "industrial"
+];
+
+function isIndustryRelevant(text: string) {
+
+  const lower = text.toLowerCase();
+
+  return industryTerms.some(term => lower.includes(term));
+}
+
 async function fetchRSS(url: string) {
 
   const controller = new AbortController();
@@ -52,6 +84,7 @@ async function fetchRSS(url: string) {
 }
 
 export async function GET() {
+
   try {
 
     /* Load RSS sources */
@@ -96,6 +129,10 @@ export async function GET() {
 
             const combined = `${title} ${description}`.toLowerCase();
 
+            /* Skip irrelevant general news */
+            if (!isIndustryRelevant(combined)) continue;
+
+            /* Match industry keywords */
             const match = keywords?.find(k =>
               combined.includes(k.keyword.toLowerCase())
             );
@@ -103,17 +140,18 @@ export async function GET() {
             if (!match) continue;
 
             const guid = item.guid || item.link;
-if (!guid) continue;
+            if (!guid) continue;
 
-if (!item.pubDate) continue;
+            if (!item.pubDate) continue;
 
-const articleDate = new Date(item.pubDate);
+            const articleDate = new Date(item.pubDate);
 
-const now = new Date();
-const yesterday = new Date();
-yesterday.setDate(now.getDate() - 1);
+            const now = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(now.getDate() - 1);
 
-if (articleDate < yesterday) continue;
+            /* Only today + yesterday */
+            if (articleDate < yesterday) continue;
 
             articles.push({
               industry_id: match.industry_id,

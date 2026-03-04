@@ -54,13 +54,13 @@ export async function getIndustrySignals() {
 
   const { data } = await supabase
     .from("industry_news")
-    .select(`
-      title,
-      description,
-      url,
-      published_at,
-      industries (name)
-    `)
+ .select(`
+  title,
+  description,
+  url,
+  published_at,
+  industry_id
+`)
     .order("published_at", { ascending: false })
     .limit(5);
 
