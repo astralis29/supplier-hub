@@ -146,19 +146,12 @@ export async function GET() {
 
             const articleDate = new Date(item.pubDate);
 
-            const now = new Date();
-            const yesterday = new Date();
-            yesterday.setDate(now.getDate() - 1);
-
-            /* Only today + yesterday */
-            if (articleDate < yesterday) continue;
-
             articles.push({
               industry_id: match.industry_id,
               rss_source_id: source.id,
               title,
               description,
-              url: item.link,
+              url: item.link || "",
               guid,
               published_at: item.pubDate
                 ? new Date(item.pubDate)
@@ -229,4 +222,4 @@ export async function GET() {
     );
 
   }
-}
+} 
