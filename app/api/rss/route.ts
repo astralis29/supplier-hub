@@ -1,4 +1,6 @@
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 import Parser from "rss-parser";
 import { createClient } from "@supabase/supabase-js";
