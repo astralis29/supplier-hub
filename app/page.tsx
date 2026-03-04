@@ -154,7 +154,7 @@ export default async function Home() {
           <div className="flex items-center text-xs text-gray-500">
 
             <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded mr-3">
-              {signal.industries?.name || "Industry"}
+              Industry
             </span>
 
             <span>
