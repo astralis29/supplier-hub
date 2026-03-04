@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 
 import Parser from "rss-parser";
 import { createClient } from "@supabase/supabase-js";
-import https from "https";
 
 const parser = new Parser({
   requestOptions: {
@@ -15,22 +14,9 @@ const parser = new Parser({
 });
 
 /* ---------- HTTPS AGENT FIX ---------- */
-const httpsAgent = new https.Agent({
-  keepAlive: true
-});
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    global: {
-      fetch: (url, options: any = {}) =>
-        fetch(url, {
-          ...options,
-          agent: httpsAgent
-        })
-    }
-  }
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 /* ------------------------------------ */
 
