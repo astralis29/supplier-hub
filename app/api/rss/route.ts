@@ -42,32 +42,19 @@ function cleanHtml(html: string | undefined) {
     .trim();
 }
 
-function fetchRSS(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    https
-      .get(
-        url,
-        {
-          headers: {
-            "User-Agent": "Mozilla/5.0"
-          }
-        },
-        res => {
-          let data = "";
-
-          res.on("data", chunk => {
-            data += chunk;
-          });
-
-          res.on("end", () => {
-            resolve(data);
-          });
-        }
-      )
-      .on("error", err => {
-        reject(err);
-      });
+async function fetchRSS(url: string) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0"
+    },
+    cache: "no-store"
   });
+
+  if (!res.ok) {
+    throw new Error(`RSS fetch failed: ${res.status}`);
+  }
+
+  return await res.text();
 }
 
 export async function GET() {
