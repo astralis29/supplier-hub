@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getIndustrySignals } from "@/lib/data";  
 
 const industries = [
@@ -11,7 +12,7 @@ const industries = [
 
 export default async function Home() {
 
-  const signals = await getIndustrySignals();
+  const signals = await getIndustrySignals() ?? [];
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
