@@ -1,3 +1,4 @@
+import { supabase } from "./supabase";
 export const suppliers = [
   {
     name: "Aussie Metal Works",
@@ -14,3 +15,19 @@ export const suppliers = [
     capability: "CNC Machining",
   },
 ];
+export async function getIndustrySignals() {
+
+  const { data } = await supabase
+    .from("industry_news")
+    .select(`
+      title,
+      description,
+      url,
+      published_at,
+      industries (name)
+    `)
+    .order("published_at", { ascending: false })
+    .limit(5);
+
+  return data;
+}

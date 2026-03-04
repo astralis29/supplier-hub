@@ -103,7 +103,17 @@ export async function GET() {
             if (!match) continue;
 
             const guid = item.guid || item.link;
-            if (!guid) continue;
+if (!guid) continue;
+
+if (!item.pubDate) continue;
+
+const articleDate = new Date(item.pubDate);
+
+const now = new Date();
+const yesterday = new Date();
+yesterday.setDate(now.getDate() - 1);
+
+if (articleDate < yesterday) continue;
 
             articles.push({
               industry_id: match.industry_id,
