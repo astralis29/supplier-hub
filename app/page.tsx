@@ -136,12 +136,10 @@ Industry
 
       {signals?.map((signal: any) => (
 
-        <a
-          key={signal.url}
-          href={signal.url}
-          target="_blank"
-          className="bg-white border rounded-xl p-6 hover:shadow-md transition"
-        >
+<div
+  key={signal.title}
+  className="bg-white border rounded-xl p-6 hover:shadow-md transition"
+>
 
           <h3 className="font-semibold text-lg text-gray-900 mb-2">
             {signal.title}
@@ -163,7 +161,7 @@ Industry
 
           </div>
 
-        </a>
+        </div>
 
       ))}
 
