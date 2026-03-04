@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import Parser from "rss-parser";
 import { createClient } from "@supabase/supabase-js";
+import https from "https";
 
 const parser = new Parser({
   requestOptions: {
@@ -22,6 +23,34 @@ function cleanHtml(html: string | undefined) {
     .replace(/<[^>]*>?/gm, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function fetchRSS(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    https
+      .get(
+        url,
+        {
+          headers: {
+            "User-Agent": "Mozilla/5.0"
+          }
+        },
+        res => {
+          let data = "";
+
+          res.on("data", chunk => {
+            data += chunk;
+          });
+
+          res.on("end", () => {
+            resolve(data);
+          });
+        }
+      )
+      .on("error", err => {
+        reject(err);
+      });
+  });
 }
 
 export async function GET() {
@@ -66,30 +95,19 @@ export async function GET() {
 
         const cleanUrl = source.url.replace("#", "");
 
-        let response;
+        let xml;
 
         try {
-          response = await fetch(cleanUrl, {
-            headers: {
-              "User-Agent": "Mozilla/5.0"
-            }
-          });
+          xml = await fetchRSS(cleanUrl);
         } catch (err) {
-          console.log("FETCH FAILED:", cleanUrl);
+          console.log("RSS DOWNLOAD FAILED:", cleanUrl);
           continue;
         }
-
-        if (!response.ok) {
-          console.log("BAD RESPONSE:", cleanUrl, response.status);
-          continue;
-        }
-
-        const xml = await response.text();
 
         try {
           feed = await parser.parseString(xml);
         } catch (err) {
-          console.log("PARSE FAILED:", cleanUrl);
+          console.log("RSS PARSE FAILED:", cleanUrl);
           continue;
         }
 
