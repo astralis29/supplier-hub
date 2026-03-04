@@ -23,23 +23,33 @@ function cleanHtml(html: string | undefined) {
 }
 
 async function fetchRSS(url: string) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-      Accept: "application/rss+xml, application/xml, text/xml"
-    },
-    redirect: "follow",
-    cache: "no-store"
-  });
 
-  if (!res.ok) {
-    throw new Error(`RSS request failed: ${res.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+  try {
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+        Accept: "application/rss+xml, application/xml, text/xml"
+      },
+      redirect: "follow",
+      cache: "no-store"
+    });
+
+    if (!res.ok) {
+      throw new Error(`RSS request failed: ${res.status}`);
+    }
+
+    return await res.text();
+
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return res.text();
 }
-
 export async function GET() {
   try {
 
