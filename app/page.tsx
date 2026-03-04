@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { getIndustrySignals } from "@/lib/data";  
 
@@ -96,42 +97,36 @@ export default async function Home() {
 
 {signals && signals.length > 0 ? (
 
-signals.map((signal: any) => (
+  signals.map((signal: any) => (
 
-<div
-  key={signal.title}
-  className="bg-white border rounded-xl p-6 hover:shadow-md transition"
->
+    <div
+      key={signal.title}
+      className="bg-white border rounded-xl p-6 hover:shadow-md transition"
+    >
 
-<h3 className="font-semibold text-lg text-gray-900 mb-2">
-{signal.title}
-</h3>
+      <h3 className="font-semibold text-lg text-gray-900 mb-2">
+        {signal.title}
+      </h3>
 
-<p className="text-gray-600 text-sm mb-4">
-{signal.description?.slice(0,120)}...
-</p>
+      <p className="text-gray-600 text-sm mb-4">
+        {signal.description?.slice(0,120)}...
+      </p>
 
-<div className="flex items-center text-xs text-gray-500">
+      <div className="flex items-center text-xs text-gray-500">
+        <span>
+          {new Date(signal.published_at).toLocaleDateString()}
+        </span>
+      </div>
 
-<span className="bg-blue-50 text-blue-700 px-2 py-1 rounded mr-3">
-Industry
-</span>
+    </div>
 
-<span>
-{new Date(signal.published_at).toLocaleDateString()}
-</span>
-
-</div>
-
-</div>
-
-))
+  ))
 
 ) : (
 
-<div className="text-gray-500">
-No industry signals yet.
-</div>
+  <p className="text-red-500">
+    DEBUG: signals array is empty
+  </p>
 
 )}
 
