@@ -57,29 +57,41 @@ export async function GET() {
     let processedFeeds = 0;
     let insertedArticles = 0;
 
-    // 3️⃣ Loop feeds
+    // 3️⃣ Loop RSS feeds
     for (const source of sources) {
 
       let feed;
 
       try {
 
-        // remove accidental # at end of URL
         const cleanUrl = source.url.replace("#", "");
 
-        const response = await fetch(cleanUrl, {
-          headers: {
-            "User-Agent": "Mozilla/5.0"
-          }
-        });
+        let response;
+
+        try {
+          response = await fetch(cleanUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0"
+            }
+          });
+        } catch (err) {
+          console.log("FETCH FAILED:", cleanUrl);
+          continue;
+        }
 
         if (!response.ok) {
-          console.log("Feed request failed:", cleanUrl);
+          console.log("BAD RESPONSE:", cleanUrl, response.status);
           continue;
         }
 
         const xml = await response.text();
-        feed = await parser.parseString(xml);
+
+        try {
+          feed = await parser.parseString(xml);
+        } catch (err) {
+          console.log("PARSE FAILED:", cleanUrl);
+          continue;
+        }
 
         processedFeeds++;
 
@@ -105,6 +117,8 @@ export async function GET() {
 
         if (!item.guid && !item.link) continue;
 
+        const guid = item.guid || item.link;
+
         // 5️⃣ Insert article
         const { error } = await supabase
           .from("industry_news")
@@ -115,7 +129,7 @@ export async function GET() {
               title,
               description,
               url: item.link,
-              guid: item.guid || item.link,
+              guid,
               published_at: item.pubDate
                 ? new Date(item.pubDate)
                 : null
