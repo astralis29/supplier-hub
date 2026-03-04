@@ -1,4 +1,4 @@
-import { getIndustrySignals } from "@/lib/data";
+import { getIndustrySignals, getSupplyChainAlerts } from "@/lib/data";
 
 const industries = [
   "Mining",
@@ -12,6 +12,7 @@ const industries = [
 export default async function Home() {
 
   const signals = await getIndustrySignals();
+  const alerts = await getSupplyChainAlerts();
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
@@ -73,6 +74,48 @@ export default async function Home() {
       </section>
 
 
+{/* SUPPLY CHAIN ALERT */}
+{alerts && alerts.length > 0 && (
+
+<section className="py-12 bg-red-50 border-y border-red-200">
+
+<div className="max-w-6xl mx-auto px-6">
+
+<div className="bg-white border border-red-200 rounded-xl p-6 shadow-sm">
+
+<p className="text-xs uppercase tracking-widest text-red-600 mb-2 font-semibold">
+⚠ Supply Chain Alert
+</p>
+
+<h3 className="text-xl font-semibold text-gray-900 mb-2">
+{alerts[0].title}
+</h3>
+
+<p className="text-gray-600 text-sm mb-3">
+{alerts[0].description?.slice(0,140)}...
+</p>
+
+<div className="text-xs text-gray-500">
+
+<span className="bg-red-100 text-red-700 px-2 py-1 rounded mr-3">
+{alerts[0].industries?.[0]?.name || "Industry"}
+</span>
+
+<span>
+{new Date(alerts[0].published_at).toLocaleDateString()}
+</span>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+)}
+
+
 {/* LIVE INDUSTRY SIGNALS */}
 <section className="py-20 bg-gray-50 border-t border-gray-200">
 
@@ -131,7 +174,7 @@ export default async function Home() {
 </section>
 
 
- {/* FEATURE SECTION - ENTERPRISE */}
+{/* FEATURE SECTION */}
 <section className="py-24 bg-white border-t border-gray-200">
   <div className="max-w-6xl mx-auto px-6">
 
