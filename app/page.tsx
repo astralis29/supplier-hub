@@ -98,7 +98,7 @@ export default async function Home() {
 <div className="text-xs text-gray-500">
 
 <span className="bg-red-100 text-red-700 px-2 py-1 rounded mr-3">
-{alerts[0].industries?.[0]?.name || "Industry"}
+Industry
 </span>
 
 <span>
