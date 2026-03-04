@@ -39,15 +39,24 @@ export async function GET() {
   try {
 
     /* Get RSS sources */
-    const { data: sources } = await supabase
-      .from("rss_sources")
-      .select("*")
-      .eq("active", true);
+const { data: sources, error: sourcesError } = await supabase
+  .from("rss_sources")
+  .select("*")
+  .eq("active", true);
 
-    if (!sources || sources.length === 0) {
-      return Response.json({ message: "No RSS sources" });
-    }
+if (sourcesError) {
+  return Response.json({
+    error: "Supabase query failed",
+    details: sourcesError.message
+  });
+}
 
+if (!sources || sources.length === 0) {
+  return Response.json({
+    message: "Query ran but returned zero rows",
+    sources
+  });
+}
     /* Load keywords */
     const { data: keywords } = await supabase
       .from("industry_keywords")
