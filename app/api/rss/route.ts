@@ -1,7 +1,13 @@
 import Parser from "rss-parser";
 import { createClient } from "@supabase/supabase-js";
 
-const parser = new Parser();
+const parser = new Parser({
+  requestOptions: {
+    headers: {
+      "User-Agent": "rss-parser"
+    }
+  }
+});
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
