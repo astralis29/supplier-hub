@@ -14,10 +14,25 @@ const parser = new Parser({
   }
 });
 
+/* ---------- HTTPS AGENT FIX ---------- */
+const httpsAgent = new https.Agent({
+  keepAlive: true
+});
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    global: {
+      fetch: (url, options: any = {}) =>
+        fetch(url, {
+          ...options,
+          agent: httpsAgent
+        })
+    }
+  }
 );
+/* ------------------------------------ */
 
 function cleanHtml(html: string | undefined) {
   if (!html) return "";
@@ -58,7 +73,7 @@ function fetchRSS(url: string): Promise<string> {
 export async function GET() {
   try {
 
-    // 1️⃣ Get active RSS sources
+    /* 1️⃣ Get active RSS sources */
     const { data: sources, error: sourceError } = await supabase
       .from("rss_sources")
       .select("*")
@@ -72,7 +87,7 @@ export async function GET() {
       return Response.json({ message: "No sources found" });
     }
 
-    // 2️⃣ Load keywords once
+    /* 2️⃣ Load keywords once */
     const { data: keywords, error: keywordError } = await supabase
       .from("industry_keywords")
       .select("industry_id, keyword");
@@ -88,7 +103,7 @@ export async function GET() {
     let processedFeeds = 0;
     let insertedArticles = 0;
 
-    // 3️⃣ Loop RSS feeds
+    /* 3️⃣ Loop RSS feeds */
     for (const source of sources) {
 
       let feed;
@@ -127,19 +142,18 @@ export async function GET() {
 
         const combinedText = `${title} ${description}`.toLowerCase();
 
-        // 4️⃣ Match keyword
+        /* 4️⃣ Match keyword */
         const match = keywords.find(k => {
           const keyword = k.keyword?.toLowerCase().trim();
           return keyword && combinedText.includes(keyword);
         });
 
         if (!match) continue;
-
         if (!item.guid && !item.link) continue;
 
         const guid = item.guid || item.link;
 
-        // 5️⃣ Insert article
+        /* 5️⃣ Insert article */
         const { error } = await supabase
           .from("industry_news")
           .upsert(
