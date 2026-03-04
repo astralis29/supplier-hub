@@ -69,9 +69,10 @@ export async function GET() {
 
 
         // 4️⃣ Match keyword
-        const match = keywords.find(k =>
-          combinedText.includes(k.keyword.toLowerCase())
-        );
+const match = keywords.find(k => {
+  const keyword = k.keyword?.toLowerCase().trim();
+  return keyword && combinedText.includes(keyword);
+});
 
         if (!match) continue;
 
