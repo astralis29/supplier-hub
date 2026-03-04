@@ -31,6 +31,24 @@ const alertKeywords = [
   "collapse",
 ];
 
+/* RISK SCORE CALCULATOR */
+function calculateRiskScore(text: string) {
+
+  let score = 0;
+
+  if (text.includes("shutdown")) score += 40;
+  if (text.includes("strike")) score += 35;
+  if (text.includes("bankruptcy")) score += 40;
+  if (text.includes("collapse")) score += 40;
+  if (text.includes("shortage")) score += 25;
+  if (text.includes("delay")) score += 15;
+  if (text.includes("disruption")) score += 25;
+  if (text.includes("fire")) score += 30;
+  if (text.includes("sanction")) score += 20;
+
+  return score;
+}
+
 /* INDUSTRY SIGNALS */
 export async function getIndustrySignals() {
 
@@ -67,13 +85,27 @@ export async function getSupplyChainAlerts() {
 
   if (!data) return [];
 
-  const alerts = data.filter((item: any) => {
+  const alerts = data
+    .map((item: any) => {
 
-    const text = `${item.title} ${item.description}`.toLowerCase();
+      const text = `${item.title} ${item.description}`.toLowerCase();
 
-    return alertKeywords.some(keyword => text.includes(keyword));
+      const hasAlert = alertKeywords.some(keyword =>
+        text.includes(keyword)
+      );
 
-  });
+      if (!hasAlert) return null;
+
+      const riskScore = calculateRiskScore(text);
+
+      return {
+        ...item,
+        riskScore
+      };
+
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.riskScore - a.riskScore);
 
   return alerts.slice(0, 1);
 }
