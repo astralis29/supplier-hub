@@ -31,13 +31,16 @@ function cleanHtml(html: string | undefined) {
 async function fetchRSS(url: string) {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0"
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+      Accept: "application/rss+xml, application/xml, text/xml"
     },
+    redirect: "follow",
     cache: "no-store"
   });
 
   if (!res.ok) {
-    throw new Error(`RSS fetch failed: ${res.status}`);
+    throw new Error(`RSS fetch failed: ${res.status} ${url}`);
   }
 
   return await res.text();
@@ -88,7 +91,8 @@ export async function GET() {
         let xml;
 
         try {
-          xml = await fetchRSS(cleanUrl);
+          console.log("Fetching RSS:", cleanUrl);
+xml = await fetchRSS(cleanUrl);
         } catch (err) {
           console.log("RSS DOWNLOAD FAILED:", cleanUrl);
           continue;
