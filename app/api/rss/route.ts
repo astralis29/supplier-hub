@@ -34,11 +34,25 @@ function containsKeyword(text: string, keyword: string) {
 }
 
 /* ------------------------------------------------ */
-/* INDUSTRIAL CONTEXT FILTER (NEW)                  */
+/* NEWS NOISE FILTER                                */
+/* ------------------------------------------------ */
+
+const newsNoise = [
+"sport","football","rugby","cricket","nba","nfl","afl",
+"election","politics","senate","parliament",
+"murder","arson","crime","court","trial","police",
+"celebrity","movie","tv","entertainment"
+];
+
+function isNewsNoise(text:string){
+return newsNoise.some(word => text.includes(word));
+}
+
+/* ------------------------------------------------ */
+/* INDUSTRIAL CONTEXT FILTER                        */
 /* ------------------------------------------------ */
 
 const industrialContext = [
-
 "mine","mining","lithium","copper","iron ore","nickel",
 "factory","manufacturing","plant","industrial",
 "port","shipping","freight","cargo","logistics",
@@ -46,12 +60,69 @@ const industrialContext = [
 "rail","infrastructure","construction",
 "semiconductor","chip","battery","ev",
 "grain","agriculture","fertilizer"
-
 ];
 
 function isIndustrialContext(text:string){
 
-return industrialContext.some(term => text.includes(term));
+let matches = 0;
+
+industrialContext.forEach(term=>{
+if(text.includes(term)) matches++;
+});
+
+return matches >= 2;
+
+}
+
+/* ------------------------------------------------ */
+/* GLOBAL SUPPLY CHAIN CHOKEPOINTS                  */
+/* ------------------------------------------------ */
+
+const supplyChainChokepoints: Record<string,string[]> = {
+
+RED_SEA:["red sea","suez canal","bab el mandeb"],
+
+PANAMA_CANAL:["panama canal"],
+
+STRAIT_OF_HORMUZ:["strait of hormuz","hormuz"],
+
+SOUTH_CHINA_SEA:["south china sea"],
+
+TAIWAN_SEMICONDUCTOR:["taiwan","tsmc","semiconductor foundry"],
+
+CHILE_LITHIUM:["chile lithium","atacama lithium"],
+
+ARGENTINA_LITHIUM:["argentina lithium"]
+
+};
+
+function detectChokepoint(text:string){
+
+for(const [location,words] of Object.entries(supplyChainChokepoints)){
+
+for(const word of words){
+
+if(text.includes(word)){
+return location;
+}
+
+}
+
+}
+
+return null;
+
+}
+
+function applyChokepointBoost(score:number,chokepoint:string|null){
+
+if(!chokepoint) return score;
+
+score += 20;
+
+if(score > 100) score = 100;
+
+return score;
 
 }
 
@@ -184,6 +255,7 @@ sanctions:60, war:80, invasion:80, blockade:70,
 
 cyclone:60, hurricane:60, storm:50,
 flood:50, wildfire:60, earthquake:70
+
 };
 
 /* ------------------------------------------------ */
@@ -200,18 +272,11 @@ const disruptionPatterns = [
 {pattern:/port congestion/i,score:50},
 {pattern:/shipping disruption/i,score:60},
 {pattern:/freight disruption/i,score:60},
-{pattern:/cargo backlog/i,score:50},
 
 {pattern:/supply (shortage|crunch|squeeze)/i,score:50},
 
 {pattern:/trade ban/i,score:70},
-{pattern:/economic sanctions/i,score:70},
-
-{pattern:/pipeline outage/i,score:70},
-{pattern:/grid outage/i,score:60},
-
-{pattern:/storm disrupt/i,score:60},
-{pattern:/flood disrupt/i,score:60}
+{pattern:/economic sanctions/i,score:70}
 
 ];
 
@@ -223,7 +288,7 @@ disruptionPatterns.forEach(({pattern,score:value})=>{
 if(pattern.test(text)) score += value;
 });
 
-if(score > 100) score = 100;
+if(score > 80) score = 80;   // improvement to stop false 100 spikes
 
 return score;
 
@@ -261,7 +326,7 @@ return Math.round(score);
 }
 
 /* ------------------------------------------------ */
-/* SUPPLY CHAIN KEYWORDS                            */
+/* SUPPLY CHAIN SCORE                               */
 /* ------------------------------------------------ */
 
 const supplyChainKeywords: Record<string, number> = {
@@ -390,15 +455,18 @@ const combined = normalizeText(`${title} ${description}`);
 const guid = item.guid || item.link;
 if(!guid || !item.pubDate) continue;
 
-/* ---------- INDUSTRIAL FILTER ---------- */
-
+if(isNewsNoise(combined)) continue;
 if(!isIndustrialContext(combined)) continue;
 
 const articleDate = new Date(item.pubDate || Date.now());
 
-const riskScore = calculateRiskScore(combined);
+let riskScore = calculateRiskScore(combined);
+
+const chokepoint = detectChokepoint(combined);
+riskScore = applyChokepointBoost(riskScore,chokepoint);
+
 const supplyScore = calculateSupplyChainScore(combined);
-const industryId = detectIndustry(combined,keywords || []);
+const industryId = detectIndustry(combined, keywords ?? []);
 const eventType = detectEventType(combined);
 const country = detectCountry(combined);
 
@@ -413,6 +481,7 @@ risk_score: riskScore,
 supply_chain_score: supplyScore,
 event_type: eventType,
 country,
+chokepoint,
 published_at: articleDate
 });
 
