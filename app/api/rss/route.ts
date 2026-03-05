@@ -34,80 +34,98 @@ function containsKeyword(text: string, keyword: string) {
 }
 
 /* ------------------------------------------------ */
-/* EVENT TYPE CLASSIFICATION (NEW)                  */
+/* INDUSTRIAL CONTEXT FILTER (NEW)                  */
+/* ------------------------------------------------ */
+
+const industrialContext = [
+
+"mine","mining","lithium","copper","iron ore","nickel",
+"factory","manufacturing","plant","industrial",
+"port","shipping","freight","cargo","logistics",
+"pipeline","oil","gas","lng","energy","refinery",
+"rail","infrastructure","construction",
+"semiconductor","chip","battery","ev",
+"grain","agriculture","fertilizer"
+
+];
+
+function isIndustrialContext(text:string){
+
+return industrialContext.some(term => text.includes(term));
+
+}
+
+/* ------------------------------------------------ */
+/* EVENT TYPE CLASSIFICATION                        */
 /* ------------------------------------------------ */
 
 const eventTypes: Record<string, string[]> = {
 
-  PORT_STRIKE: [
-    "port strike",
-    "dockworkers strike",
-    "dock strike"
-  ],
+PORT_STRIKE:["port strike","dockworkers strike","dock strike"],
 
-  SHIPPING_DISRUPTION: [
-    "shipping disruption",
-    "freight disruption",
-    "port congestion",
-    "canal blockage"
-  ],
+SHIPPING_DISRUPTION:[
+"shipping disruption",
+"freight disruption",
+"port congestion",
+"canal blockage"
+],
 
-  MINE_SHUTDOWN: [
-    "mine shutdown",
-    "mine closure",
-    "mining halt"
-  ],
+MINE_SHUTDOWN:[
+"mine shutdown",
+"mine closure",
+"mining halt"
+],
 
-  REFINERY_OUTAGE: [
-    "refinery outage",
-    "refinery shutdown"
-  ],
+REFINERY_OUTAGE:[
+"refinery outage",
+"refinery shutdown"
+],
 
-  FACTORY_FIRE: [
-    "factory fire",
-    "plant fire",
-    "industrial fire"
-  ],
+FACTORY_FIRE:[
+"factory fire",
+"plant fire",
+"industrial fire"
+],
 
-  SUPPLY_SHORTAGE: [
-    "shortage",
-    "supply shortage",
-    "supply disruption"
-  ],
+SUPPLY_SHORTAGE:[
+"shortage",
+"supply shortage",
+"supply disruption"
+],
 
-  NATURAL_DISASTER: [
-    "earthquake",
-    "cyclone",
-    "typhoon",
-    "flood",
-    "wildfire"
-  ],
+NATURAL_DISASTER:[
+"earthquake",
+"cyclone",
+"typhoon",
+"flood",
+"wildfire"
+],
 
-  GEOPOLITICAL_CONFLICT: [
-    "war",
-    "invasion",
-    "sanctions",
-    "trade war",
-    "blockade"
-  ]
+GEOPOLITICAL_CONFLICT:[
+"war",
+"invasion",
+"sanctions",
+"trade war",
+"blockade"
+]
 
 };
 
 function detectEventType(text: string) {
 
-  for (const [event, keywords] of Object.entries(eventTypes)) {
+for (const [event, keywords] of Object.entries(eventTypes)) {
 
-    for (const word of keywords) {
+for (const word of keywords) {
 
-      if (text.includes(word)) {
-        return event;
-      }
+if (text.includes(word)) {
+return event;
+}
 
-    }
+}
 
-  }
+}
 
-  return null;
+return null;
 
 }
 
@@ -295,24 +313,6 @@ return null;
 }
 
 /* ------------------------------------------------ */
-/* SUPPLY CHAIN RELEVANCE                           */
-/* ------------------------------------------------ */
-
-function isSupplyChainRelevant(
-riskScore:number,
-supplyScore:number,
-industryId:number | null
-){
-
-if(riskScore >= 40) return true;
-if(supplyScore >= 20) return true;
-if(industryId !== null) return true;
-
-return false;
-
-}
-
-/* ------------------------------------------------ */
 /* CLEAN HTML                                       */
 /* ------------------------------------------------ */
 
@@ -390,6 +390,10 @@ const combined = normalizeText(`${title} ${description}`);
 const guid = item.guid || item.link;
 if(!guid || !item.pubDate) continue;
 
+/* ---------- INDUSTRIAL FILTER ---------- */
+
+if(!isIndustrialContext(combined)) continue;
+
 const articleDate = new Date(item.pubDate || Date.now());
 
 const riskScore = calculateRiskScore(combined);
@@ -397,8 +401,6 @@ const supplyScore = calculateSupplyChainScore(combined);
 const industryId = detectIndustry(combined,keywords || []);
 const eventType = detectEventType(combined);
 const country = detectCountry(combined);
-
-if(!isSupplyChainRelevant(riskScore,supplyScore,industryId)) continue;
 
 articles.push({
 industry_id: industryId ?? null,
