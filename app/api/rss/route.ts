@@ -470,6 +470,10 @@ const industryId = detectIndustry(combined, keywords ?? []);
 const eventType = detectEventType(combined);
 const country = detectCountry(combined);
 
+/* FINAL RELEVANCE FILTER */
+
+if(riskScore < 40 && supplyScore < 20 && !eventType && !chokepoint) continue;
+
 articles.push({
 industry_id: industryId ?? null,
 rss_source_id: source.id,
