@@ -193,8 +193,9 @@ const match = keywords?.find(k =>
 /* Detect risk signals */
 const riskScore = calculateRiskScore(combined);
 
-/* Only keep article if it has industrial relevance OR risk */
-if (!industryRelevant && !match && riskScore === 0) continue;
+
+// Only skip articles that are clearly unrelated
+if (!industryRelevant) continue;
 
 const guid = item.guid || item.link;
 if (!guid) continue;
