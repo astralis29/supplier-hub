@@ -44,7 +44,6 @@ const riskKeywords: Record<string, number> = {
   outage: 60,
   blackout: 60,
   "power outage": 60,
-  closes: 80,
 
   shortage: 50,
   scarcity: 50,
@@ -57,7 +56,6 @@ const riskKeywords: Record<string, number> = {
   halt: 50,
   halted: 50,
   suspended: 50,
-  suspension: 50,
 
   slowdown: 30,
   tensions: 30,
@@ -66,50 +64,32 @@ const riskKeywords: Record<string, number> = {
   "port congestion": 50,
   "shipping disruption": 50,
   "freight disruption": 50,
-  "shipping delay": 40,
-  "freight delay": 40,
 
   "rail disruption": 60,
   "rail strike": 70,
-  "railway shutdown": 60,
 
   "trucking strike": 70,
-  "truck shortage": 50,
 
   "logistics disruption": 50,
   "cargo backlog": 40,
 
   "canal blockage": 70,
-  disruptions: 50,
 
   "mine shutdown": 70,
   "mine closure": 70,
   "mine accident": 70,
-  "mine fire": 60,
 
   "production halt": 60,
-  "production disruption": 50,
   "output cut": 50,
 
-  "smelter outage": 60,
+  "refinery outage": 60,
   "smelter shutdown": 60,
 
-  "refinery outage": 60,
-  "refinery shutdown": 60,
-
-  "plant shutdown": 60,
   "factory shutdown": 60,
   "factory fire": 60,
 
-  "power plant outage": 60,
-  "grid failure": 60,
-  "energy shortage": 50,
-
-  "oil disruption": 50,
-  "gas shortage": 50,
   "pipeline shutdown": 60,
   "pipeline leak": 60,
-  "pipeline explosion": 70,
 
   sanction: 50,
   sanctions: 50,
@@ -119,25 +99,15 @@ const riskKeywords: Record<string, number> = {
   "export ban": 60,
   "import ban": 60,
 
-  "trade restriction": 50,
-  "trade barrier": 40,
-
-  "trade war": 60,
-  embargo: 60,
-
   conflict: 50,
   war: 60,
   invasion: 60,
   blockade: 60,
-  defence: 60,
-  strikes: 50,
 
   restructuring: 40,
-  "financial distress": 50,
   default: 60,
 
   layoffs: 40,
-  "job cuts": 40,
 
   cyclone: 60,
   hurricane: 60,
@@ -157,18 +127,18 @@ const riskKeywords: Record<string, number> = {
   drought: 40,
 
   "bridge collapse": 70,
-  "infrastructure failure": 60,
-  "tunnel collapse": 70,
 
   "port closure": 60,
   "airport closure": 60,
 
   "road closure": 40,
-  "highway closure": 40,
 
-  "network outage": 40,
-  "communication outage": 40
+  "network outage": 40
 };
+
+function containsKeyword(text: string, keyword: string) {
+  return new RegExp(`\\b${keyword}\\b`).test(text);
+}
 
 function calculateRiskScore(text: string) {
 
@@ -176,7 +146,7 @@ function calculateRiskScore(text: string) {
   const lower = text.toLowerCase();
 
   Object.entries(riskKeywords).forEach(([word, value]) => {
-    if (lower.includes(word)) score += value;
+    if (containsKeyword(lower, word)) score += value;
   });
 
   if (score > 0 && score < 30) score += 10;
@@ -194,8 +164,6 @@ const supplyChainKeywords: Record<string, number> = {
   copper: 20,
   iron: 15,
   nickel: 15,
-  cobalt: 15,
-  rare: 15,
   logistics: 20,
   port: 20,
   shipping: 20,
@@ -220,7 +188,7 @@ function calculateSupplyChainScore(text: string) {
   const lower = text.toLowerCase();
 
   Object.entries(supplyChainKeywords).forEach(([word, value]) => {
-    if (lower.includes(word)) score += value;
+    if (containsKeyword(lower, word)) score += value;
   });
 
   return Math.min(score, 100);
@@ -234,21 +202,24 @@ const industryDetection: Record<string, string[]> = {
 
   mining: ["mine", "mining", "lithium", "copper", "nickel", "iron ore", "smelter"],
 
-  energy: ["oil", "gas", "lng", "refinery", "pipeline", "energy", "power plant"],
+  energy: ["oil", "gas", "lng", "refinery", "pipeline", "energy"],
 
   logistics: ["shipping", "freight", "port", "rail", "cargo", "logistics", "trucking"],
 
-  manufacturing: ["factory", "manufacturing", "production", "plant", "industrial"],
+  manufacturing: ["factory", "manufacturing", "production", "plant"],
 
-  infrastructure: ["construction", "infrastructure", "bridge", "tunnel", "project"]
+  infrastructure: ["construction", "infrastructure", "bridge", "tunnel"]
 
 };
 
-function detectIndustry(text: string, keywords: any[]) {
+function detectIndustry(
+  text: string,
+  keywords: { industry_id: number; keyword: string }[]
+) {
 
   const lower = text.toLowerCase();
 
-  const keywordMatch = keywords?.find(k =>
+  const keywordMatch = keywords.find(k =>
     lower.includes(k.keyword.toLowerCase())
   );
 
@@ -258,9 +229,9 @@ function detectIndustry(text: string, keywords: any[]) {
 
     for (const word of words) {
 
-      if (lower.includes(word)) {
+      if (containsKeyword(lower, word)) {
 
-        const found = keywords?.find(k =>
+        const found = keywords.find(k =>
           k.keyword.toLowerCase().includes(industry)
         );
 
@@ -334,7 +305,7 @@ export async function GET() {
 
     const results = await Promise.all(
 
-      sources.map(async (source) => {
+      (sources || []).map(async (source) => {
 
         try {
 
@@ -362,7 +333,7 @@ export async function GET() {
             const riskScore = calculateRiskScore(combined);
             const supplyScore = calculateSupplyChainScore(combined);
 
-            const industryId = detectIndustry(combined, keywords);
+            const industryId = detectIndustry(combined, keywords || []);
 
             articles.push({
               industry_id: industryId,
@@ -385,6 +356,7 @@ export async function GET() {
               .upsert(articles, { onConflict: "guid" });
 
             return { processed: true, inserted: articles.length };
+
           }
 
           return { processed: true, inserted: 0 };
