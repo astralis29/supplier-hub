@@ -350,8 +350,15 @@ const industryTerms = [
   /* FALLBACK — if filters remove everything */
   const usableSignals = industrySignals.length > 0 ? industrySignals : signals;
 
-const highRisk = usableSignals.filter((s:any) => s.risk_score >= 60);
-const mediumRisk = usableSignals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
+const highRisk = signals.filter((s:any) => s.risk_score >= 80);
+
+const mediumRisk = signals.filter(
+  (s:any) => s.risk_score >= 50 && s.risk_score < 80
+);
+
+const lowRisk = signals.filter(
+  (s:any) => s.risk_score >= 20 && s.risk_score < 50
+);
 
 /* fallback: show latest news even if risk = 0 */
 const normalSignals =
@@ -359,15 +366,17 @@ const normalSignals =
     ? signals.filter((s:any) => s.risk_score < 30)
     : signals;
   /* GLOBAL RISK INDEX */
-  const avgRisk =
-    usableSignals.length > 0
-      ? Math.round(
-          usableSignals.reduce((acc:any, s:any) => acc + (s.risk_score || 0), 0) /
-          usableSignals.length
-        )
-      : 0;
+const relevantSignals = signals.filter((s:any) => s.risk_score >= 20);
 
-  return (
+const avgRisk =
+  relevantSignals.length > 0
+    ? Math.round(
+        relevantSignals.reduce(
+          (acc:any, s:any) => acc + (s.risk_score || 0),
+          0
+        ) / relevantSignals.length
+      )
+    : 0;
 
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
@@ -633,6 +642,6 @@ const normalSignals =
 
     </main>
 
-  );
+  ;
 
 }
