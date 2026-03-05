@@ -512,12 +512,7 @@ export async function GET() {
             const guid = item.guid || item.link;
             if (!guid || !item.pubDate) continue;
 
-            const articleDate = new Date(item.pubDate);
-
-            const twoDaysAgo = new Date();
-            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-            if (articleDate < twoDaysAgo) continue;
+const articleDate = new Date(item.pubDate || Date.now());
 
             const riskScore = calculateRiskScore(combined);
             const supplyScore = calculateSupplyChainScore(combined);
