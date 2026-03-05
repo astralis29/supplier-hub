@@ -34,6 +34,118 @@ function containsKeyword(text: string, keyword: string) {
 }
 
 /* ------------------------------------------------ */
+/* EVENT TYPE CLASSIFICATION (NEW)                  */
+/* ------------------------------------------------ */
+
+const eventTypes: Record<string, string[]> = {
+
+  PORT_STRIKE: [
+    "port strike",
+    "dockworkers strike",
+    "dock strike"
+  ],
+
+  SHIPPING_DISRUPTION: [
+    "shipping disruption",
+    "freight disruption",
+    "port congestion",
+    "canal blockage"
+  ],
+
+  MINE_SHUTDOWN: [
+    "mine shutdown",
+    "mine closure",
+    "mining halt"
+  ],
+
+  REFINERY_OUTAGE: [
+    "refinery outage",
+    "refinery shutdown"
+  ],
+
+  FACTORY_FIRE: [
+    "factory fire",
+    "plant fire",
+    "industrial fire"
+  ],
+
+  SUPPLY_SHORTAGE: [
+    "shortage",
+    "supply shortage",
+    "supply disruption"
+  ],
+
+  NATURAL_DISASTER: [
+    "earthquake",
+    "cyclone",
+    "typhoon",
+    "flood",
+    "wildfire"
+  ],
+
+  GEOPOLITICAL_CONFLICT: [
+    "war",
+    "invasion",
+    "sanctions",
+    "trade war",
+    "blockade"
+  ]
+
+};
+
+function detectEventType(text: string) {
+
+  for (const [event, keywords] of Object.entries(eventTypes)) {
+
+    for (const word of keywords) {
+
+      if (text.includes(word)) {
+        return event;
+      }
+
+    }
+
+  }
+
+  return null;
+
+}
+
+/* ------------------------------------------------ */
+/* COUNTRY DETECTION                                */
+/* ------------------------------------------------ */
+
+const countryKeywords: Record<string, string[]> = {
+
+USA:["united states","america","texas","california"],
+CHINA:["china","beijing","shanghai"],
+INDIA:["india","mumbai","delhi"],
+JAPAN:["japan","tokyo"],
+AUSTRALIA:["australia","sydney","melbourne","perth"],
+UK:["united kingdom","britain","london"],
+GERMANY:["germany","berlin"],
+FRANCE:["france","paris"],
+RUSSIA:["russia","moscow"],
+BRAZIL:["brazil","rio"],
+CANADA:["canada","toronto"]
+
+};
+
+function detectCountry(text:string){
+
+for(const [country,words] of Object.entries(countryKeywords)){
+
+for(const word of words){
+if(text.includes(word)) return country;
+}
+
+}
+
+return null;
+
+}
+
+/* ------------------------------------------------ */
 /* RISK KEYWORDS                                    */
 /* ------------------------------------------------ */
 
@@ -57,10 +169,10 @@ flood:50, wildfire:60, earthquake:70
 };
 
 /* ------------------------------------------------ */
-/* PATTERN BASED DISRUPTION DETECTION               */
+/* PATTERN RISK DETECTION                           */
 /* ------------------------------------------------ */
 
-const disruptionPatterns: {pattern:RegExp,score:number}[] = [
+const disruptionPatterns = [
 
 {pattern:/production (halt|halted|cut)/i,score:60},
 {pattern:/operations (halt|halted|suspended)/i,score:60},
@@ -131,70 +243,6 @@ return Math.round(score);
 }
 
 /* ------------------------------------------------ */
-/* EVENT CLASSIFICATION                             */
-/* ------------------------------------------------ */
-
-const eventCategories: Record<string,string[]> = {
-
-LABOUR:["strike","walkout","labour dispute","union"],
-LOGISTICS:["port congestion","shipping","freight","cargo"],
-INDUSTRIAL:["factory fire","plant shutdown","explosion","mine collapse"],
-GEOPOLITICAL:["sanctions","war","invasion","blockade"],
-WEATHER:["storm","cyclone","flood","wildfire","earthquake"],
-CYBER:["cyber attack","ransomware","system outage"],
-FINANCIAL:["bankruptcy","insolvency","liquidation"]
-
-};
-
-function detectEventCategory(text:string){
-
-for(const [category,words] of Object.entries(eventCategories)){
-
-for(const word of words){
-if(text.includes(word)) return category;
-}
-
-}
-
-return null;
-
-}
-
-/* ------------------------------------------------ */
-/* COUNTRY DETECTION                                */
-/* ------------------------------------------------ */
-
-const countryKeywords: Record<string,string[]> = {
-
-USA:["united states","america","texas","california"],
-CHINA:["china","beijing","shanghai"],
-INDIA:["india","mumbai","delhi"],
-JAPAN:["japan","tokyo"],
-AUSTRALIA:["australia","sydney","melbourne","perth"],
-UK:["united kingdom","britain","london"],
-GERMANY:["germany","berlin"],
-FRANCE:["france","paris"],
-RUSSIA:["russia","moscow"],
-BRAZIL:["brazil","rio"],
-CANADA:["canada","toronto"]
-
-};
-
-function detectCountry(text:string){
-
-for(const [country,words] of Object.entries(countryKeywords)){
-
-for(const word of words){
-if(text.includes(word)) return country;
-}
-
-}
-
-return null;
-
-}
-
-/* ------------------------------------------------ */
 /* SUPPLY CHAIN KEYWORDS                            */
 /* ------------------------------------------------ */
 
@@ -231,16 +279,6 @@ return score;
 /* INDUSTRY DETECTION                               */
 /* ------------------------------------------------ */
 
-const industryDetection: Record<string,string[]> = {
-
-mining:["mine","mining","lithium","copper"],
-energy:["oil","gas","lng","refinery"],
-logistics:["shipping","freight","port","rail"],
-manufacturing:["factory","manufacturing","plant"],
-infrastructure:["construction","bridge"]
-
-};
-
 function detectIndustry(
 text:string,
 keywords:{industry_id:number;keyword:string}[]
@@ -252,30 +290,12 @@ text.includes(k.keyword.toLowerCase())
 
 if(keywordMatch) return keywordMatch.industry_id;
 
-for(const [industry,words] of Object.entries(industryDetection)){
-
-for(const word of words){
-
-if(text.includes(word)){
-
-const found = keywords.find(k =>
-k.keyword.toLowerCase().includes(industry)
-);
-
-if(found) return found.industry_id;
-
-}
-
-}
-
-}
-
 return null;
 
 }
 
 /* ------------------------------------------------ */
-/* SUPPLY CHAIN RELEVANCE FILTER                    */
+/* SUPPLY CHAIN RELEVANCE                           */
 /* ------------------------------------------------ */
 
 function isSupplyChainRelevant(
@@ -375,8 +395,7 @@ const articleDate = new Date(item.pubDate || Date.now());
 const riskScore = calculateRiskScore(combined);
 const supplyScore = calculateSupplyChainScore(combined);
 const industryId = detectIndustry(combined,keywords || []);
-
-const eventCategory = detectEventCategory(combined);
+const eventType = detectEventType(combined);
 const country = detectCountry(combined);
 
 if(!isSupplyChainRelevant(riskScore,supplyScore,industryId)) continue;
@@ -390,7 +409,7 @@ url: item.link || "",
 guid,
 risk_score: riskScore,
 supply_chain_score: supplyScore,
-event_category: eventCategory,
+event_type: eventType,
 country,
 published_at: articleDate
 });
