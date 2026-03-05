@@ -23,8 +23,6 @@ const supabase = createClient(
 
 const riskKeywords: Record<string, number> = {
 
-  /* severe industrial disruptions */
-
   strike: 70,
   walkout: 70,
   shutdown: 70,
@@ -46,9 +44,7 @@ const riskKeywords: Record<string, number> = {
   outage: 60,
   blackout: 60,
   "power outage": 60,
-  Closes: 80,
-
-  /* supply chain disruptions */
+  closes: 80,
 
   shortage: 50,
   scarcity: 50,
@@ -64,9 +60,7 @@ const riskKeywords: Record<string, number> = {
   suspension: 50,
 
   slowdown: 30,
-  Tensions: 30,
-
-  /* logistics / transport */
+  tensions: 30,
 
   "port strike": 70,
   "port congestion": 50,
@@ -86,9 +80,7 @@ const riskKeywords: Record<string, number> = {
   "cargo backlog": 40,
 
   "canal blockage": 70,
-  "Disruptions":50,
-
-  /* mining / extraction */
+  disruptions: 50,
 
   "mine shutdown": 70,
   "mine closure": 70,
@@ -109,8 +101,6 @@ const riskKeywords: Record<string, number> = {
   "factory shutdown": 60,
   "factory fire": 60,
 
-  /* energy supply */
-
   "power plant outage": 60,
   "grid failure": 60,
   "energy shortage": 50,
@@ -120,11 +110,6 @@ const riskKeywords: Record<string, number> = {
   "pipeline shutdown": 60,
   "pipeline leak": 60,
   "pipeline explosion": 70,
-
-  "lng disruption": 50,
-  "refinery disruption": 50,
-
-  /* trade / geopolitics */
 
   sanction: 50,
   sanctions: 50,
@@ -144,10 +129,8 @@ const riskKeywords: Record<string, number> = {
   war: 60,
   invasion: 60,
   blockade: 60,
-  Defence:60,
-  Strikes:50,
-
-  /* financial distress */
+  defence: 60,
+  strikes: 50,
 
   restructuring: 40,
   "financial distress": 50,
@@ -155,11 +138,6 @@ const riskKeywords: Record<string, number> = {
 
   layoffs: 40,
   "job cuts": 40,
-
-  "plant closure": 60,
-  "production cuts": 50,
-
-  /* weather / disasters */
 
   cyclone: 60,
   hurricane: 60,
@@ -177,8 +155,6 @@ const riskKeywords: Record<string, number> = {
 
   heatwave: 40,
   drought: 40,
-
-  /* infrastructure */
 
   "bridge collapse": 70,
   "infrastructure failure": 60,
@@ -200,19 +176,12 @@ function calculateRiskScore(text: string) {
   const lower = text.toLowerCase();
 
   Object.entries(riskKeywords).forEach(([word, value]) => {
-
-    if (lower.includes(word)) {
-      score += value;
-    }
-
+    if (lower.includes(word)) score += value;
   });
-
-  /* small boost if disruption detected */
 
   if (score > 0 && score < 30) score += 10;
 
   return Math.min(score, 100);
-
 }
 
 /* ------------------------------------------------ */
@@ -251,15 +220,59 @@ function calculateSupplyChainScore(text: string) {
   const lower = text.toLowerCase();
 
   Object.entries(supplyChainKeywords).forEach(([word, value]) => {
-
-    if (lower.includes(word)) {
-      score += value;
-    }
-
+    if (lower.includes(word)) score += value;
   });
 
   return Math.min(score, 100);
+}
 
+/* ------------------------------------------------ */
+/* INDUSTRY DETECTION                               */
+/* ------------------------------------------------ */
+
+const industryDetection: Record<string, string[]> = {
+
+  mining: ["mine", "mining", "lithium", "copper", "nickel", "iron ore", "smelter"],
+
+  energy: ["oil", "gas", "lng", "refinery", "pipeline", "energy", "power plant"],
+
+  logistics: ["shipping", "freight", "port", "rail", "cargo", "logistics", "trucking"],
+
+  manufacturing: ["factory", "manufacturing", "production", "plant", "industrial"],
+
+  infrastructure: ["construction", "infrastructure", "bridge", "tunnel", "project"]
+
+};
+
+function detectIndustry(text: string, keywords: any[]) {
+
+  const lower = text.toLowerCase();
+
+  const keywordMatch = keywords?.find(k =>
+    lower.includes(k.keyword.toLowerCase())
+  );
+
+  if (keywordMatch) return keywordMatch.industry_id;
+
+  for (const [industry, words] of Object.entries(industryDetection)) {
+
+    for (const word of words) {
+
+      if (lower.includes(word)) {
+
+        const found = keywords?.find(k =>
+          k.keyword.toLowerCase().includes(industry)
+        );
+
+        if (found) return found.industry_id;
+
+      }
+
+    }
+
+  }
+
+  return null;
 }
 
 /* ------------------------------------------------ */
@@ -293,9 +306,7 @@ async function fetchRSS(url: string) {
       cache: "no-store"
     });
 
-    if (!res.ok) {
-      throw new Error(`RSS request failed: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`RSS request failed: ${res.status}`);
 
     return await res.text();
 
@@ -312,23 +323,10 @@ export async function GET() {
 
   try {
 
-    const { data: sources, error: sourcesError } = await supabase
+    const { data: sources } = await supabase
       .from("rss_sources")
       .select("*")
       .eq("active", true);
-
-    if (sourcesError) {
-      return Response.json({
-        error: "Supabase query failed",
-        details: sourcesError.message
-      });
-    }
-
-    if (!sources || sources.length === 0) {
-      return Response.json({
-        message: "No RSS sources"
-      });
-    }
 
     const { data: keywords } = await supabase
       .from("industry_keywords")
@@ -349,30 +347,25 @@ export async function GET() {
 
             const title = cleanHtml(item.title);
             const description = cleanHtml(item.contentSnippet || item.content);
-
             const combined = `${title} ${description}`.toLowerCase();
 
             const guid = item.guid || item.link;
-            if (!guid) continue;
-
-            if (!item.pubDate) continue;
+            if (!guid || !item.pubDate) continue;
 
             const articleDate = new Date(item.pubDate);
 
-            const tenDaysAgo = new Date();
-            tenDaysAgo.setDate(tenDaysAgo.getDate() - 2);
+            const twoDaysAgo = new Date();
+            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-            if (articleDate < tenDaysAgo) continue;
+            if (articleDate < twoDaysAgo) continue;
 
             const riskScore = calculateRiskScore(combined);
             const supplyScore = calculateSupplyChainScore(combined);
 
-            const match = keywords?.find(k =>
-              combined.includes(k.keyword.toLowerCase())
-            );
+            const industryId = detectIndustry(combined, keywords);
 
             articles.push({
-              industry_id: match?.industry_id ?? null,
+              industry_id: industryId,
               rss_source_id: source.id,
               title,
               description,
@@ -387,35 +380,19 @@ export async function GET() {
 
           if (articles.length > 0) {
 
-            const { error } = await supabase
+            await supabase
               .from("industry_news")
               .upsert(articles, { onConflict: "guid" });
 
-            if (error) {
-              console.log("Insert failed for:", source.url);
-              return { processed: true, inserted: 0 };
-            }
-
-            return {
-              processed: true,
-              inserted: articles.length
-            };
-
+            return { processed: true, inserted: articles.length };
           }
 
-          return {
-            processed: true,
-            inserted: 0
-          };
+          return { processed: true, inserted: 0 };
 
         } catch {
 
           console.log("Feed failed:", source.url);
-
-          return {
-            processed: false,
-            inserted: 0
-          };
+          return { processed: false, inserted: 0 };
 
         }
 
@@ -423,11 +400,7 @@ export async function GET() {
     );
 
     const processedFeeds = results.filter(r => r.processed).length;
-
-    const articlesInserted = results.reduce(
-      (sum, r) => sum + r.inserted,
-      0
-    );
+    const articlesInserted = results.reduce((sum, r) => sum + r.inserted, 0);
 
     return Response.json({
       success: true,
@@ -438,10 +411,7 @@ export async function GET() {
   } catch (error: any) {
 
     return Response.json(
-      {
-        error: error.message,
-        stack: error.stack
-      },
+      { error: error.message, stack: error.stack },
       { status: 500 }
     );
 
