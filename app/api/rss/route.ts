@@ -17,34 +17,79 @@ const supabase = createClient(
   }
 );
 
+/* ------------------------------------------------ */
+/* RISK KEYWORDS + SCORING                          */
+/* ------------------------------------------------ */
+
+const riskKeywords: Record<string, number> = {
+  strike: 40,
+  shortage: 30,
+  delay: 20,
+  shutdown: 40,
+  fire: 35,
+  bankruptcy: 50,
+  insolvency: 50,
+  disruption: 25,
+  sanction: 30,
+  collapse: 45
+};
+
+function calculateRiskScore(text: string) {
+
+  let score = 0;
+  const lower = text.toLowerCase();
+
+  Object.entries(riskKeywords).forEach(([word, value]) => {
+
+    if (lower.includes(word)) {
+      score += value;
+    }
+
+  });
+
+  return Math.min(score, 100);
+}
+
+/* ------------------------------------------------ */
+/* CLEAN HTML                                       */
+/* ------------------------------------------------ */
+
 function cleanHtml(html: string | undefined) {
   if (!html) return "";
   return html.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
 }
 
-/* INDUSTRY RELEVANCE FILTER */
+/* ------------------------------------------------ */
+/* INDUSTRY RELEVANCE FILTER                        */
+/* ------------------------------------------------ */
 
 const industryTerms = [
-  "mine",
   "mining",
   "lithium",
   "copper",
-  "nickel",
   "iron ore",
+  "nickel",
+  "rare earth",
   "steel",
-  "factory",
+  "fabrication",
   "manufacturing",
-  "plant",
+  "engineering",
+  "industrial",
+  "infrastructure",
   "energy",
+  "renewable",
   "gas",
   "oil",
   "construction",
-  "infrastructure",
   "supply chain",
   "logistics",
   "port",
-  "engineering",
-  "industrial"
+  "processing plant",
+  "refinery",
+  "mineral",
+  "smelter",
+  "equipment",
+  "machinery"
 ];
 
 function isIndustryRelevant(text: string) {
@@ -53,6 +98,10 @@ function isIndustryRelevant(text: string) {
 
   return industryTerms.some(term => lower.includes(term));
 }
+
+/* ------------------------------------------------ */
+/* FETCH RSS                                        */
+/* ------------------------------------------------ */
 
 async function fetchRSS(url: string) {
 
@@ -83,6 +132,10 @@ async function fetchRSS(url: string) {
   }
 }
 
+/* ------------------------------------------------ */
+/* MAIN RSS INGESTION                               */
+/* ------------------------------------------------ */
+
 export async function GET() {
 
   try {
@@ -106,7 +159,7 @@ export async function GET() {
       });
     }
 
-    /* Load keywords */
+    /* Load industry keywords */
     const { data: keywords } = await supabase
       .from("industry_keywords")
       .select("industry_id, keyword");
@@ -132,7 +185,7 @@ export async function GET() {
             /* Skip irrelevant general news */
             if (!isIndustryRelevant(combined)) continue;
 
-            /* Match industry keywords */
+            /* Match industry keyword */
             const match = keywords?.find(k =>
               combined.includes(k.keyword.toLowerCase())
             );
@@ -144,7 +197,7 @@ export async function GET() {
 
             if (!item.pubDate) continue;
 
-            const articleDate = new Date(item.pubDate);
+            const riskScore = calculateRiskScore(combined);
 
             articles.push({
               industry_id: match.industry_id,
@@ -153,9 +206,8 @@ export async function GET() {
               description,
               url: item.link || "",
               guid,
-              published_at: item.pubDate
-                ? new Date(item.pubDate)
-                : null
+              risk_score: riskScore,
+              published_at: new Date(item.pubDate)
             });
 
           }
@@ -222,4 +274,5 @@ export async function GET() {
     );
 
   }
-} 
+
+}
