@@ -574,7 +574,7 @@ const normalSignals =
                 Industry Signals
               </h3>
 
-              {signals.slice(0,3).map((signal:any) => (
+              {usableSignals.slice(0,3).map((signal:any) => (
 
                 <div
                   key={signal.title}
