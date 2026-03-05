@@ -49,6 +49,50 @@ function calculateRiskScore(text: string) {
 }
 
 /* ------------------------------------------------ */
+/* SUPPLY CHAIN KEYWORDS + SCORING                  */
+/* ------------------------------------------------ */
+
+const supplyChainKeywords: Record<string, number> = {
+  mining: 20,
+  lithium: 20,
+  copper: 20,
+  iron: 15,
+  logistics: 20,
+  port: 20,
+  shipping: 20,
+  freight: 20,
+  rail: 15,
+  steel: 15,
+  manufacturing: 20,
+  energy: 20,
+  refinery: 20,
+  smelter: 20,
+  construction: 15,
+  infrastructure: 15,
+  equipment: 15,
+  machinery: 15,
+  supply: 15,
+  production: 15
+};
+
+function calculateSupplyChainScore(text: string) {
+
+  let score = 0;
+  const lower = text.toLowerCase();
+
+  Object.entries(supplyChainKeywords).forEach(([word, value]) => {
+
+    if (lower.includes(word)) {
+      score += value;
+    }
+
+  });
+
+  return Math.min(score, 100);
+
+}
+
+/* ------------------------------------------------ */
 /* CLEAN HTML                                       */
 /* ------------------------------------------------ */
 
@@ -148,13 +192,14 @@ export async function GET() {
             const articleDate = new Date(item.pubDate);
 
             /* Only keep articles from last 48 hours */
-            const tenDaysAgo = new Date();
-            tenDaysAgo.setDate(tenDaysAgo.getDate() - 2);
+            const twoDaysAgo = new Date();
+            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-            if (articleDate < tenDaysAgo) continue;
+            if (articleDate < twoDaysAgo) continue;
 
-            /* Detect risk signals */
+            /* Calculate scores */
             const riskScore = calculateRiskScore(combined);
+            const supplyScore = calculateSupplyChainScore(combined);
 
             /* Optional industry keyword match */
             const match = keywords?.find(k =>
@@ -169,6 +214,7 @@ export async function GET() {
               url: item.link || "",
               guid,
               risk_score: riskScore,
+              supply_chain_score: supplyScore,
               published_at: articleDate
             });
 
