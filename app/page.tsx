@@ -17,631 +17,306 @@ export default async function Home() {
   const signals = await getIndustrySignals() ?? [];
 
   /* INDUSTRY FILTER */
+
 const industryTerms = [
 
-/* LOGISTICS & TRANSPORT */
+"freight","logistics","shipping","cargo","container","port","harbour","dock","terminal","supply chain",
+"trade","transport","rail","railway","rail freight","trucking","truck","haulage","air cargo","air freight",
+"shipping lane","canal","tanker","bulk carrier","cargo ship","container ship","freight route","transport corridor",
 
-"freight",
-"logistics",
-"shipping",
-"cargo",
-"container",
-"port",
-"harbour",
-"dock",
-"terminal",
-"supply chain",
-"trade",
-"transport",
-"rail",
-"railway",
-"rail freight",
-"trucking",
-"truck",
-"haulage",
-"air cargo",
-"air freight",
-"shipping lane",
-"canal",
-"tanker",
-"bulk carrier",
-"cargo ship",
-"container ship",
-"freight route",
-"transport corridor",
-"shipping route",
+"mining","mine","mineral","minerals","lithium","copper","iron ore","nickel","cobalt","bauxite","aluminium",
+"steel","coal","metallurgical coal","gold","silver","platinum","palladium","rare earth","rare earths",
+"graphite","zinc","lead","manganese","uranium","smelter","refinery","ore","metal","metals","commodity",
 
-/* MINING & METALS */
+"energy","oil","gas","lng","crude","petroleum","refining","pipeline","offshore drilling","drilling",
+"upstream","downstream","opec","power","electricity","power plant","grid","utility","renewable","solar",
+"wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage",
 
-"mining",
-"mine",
-"mineral",
-"minerals",
-"lithium",
-"copper",
-"iron ore",
-"nickel",
-"cobalt",
-"bauxite",
-"aluminium",
-"steel",
-"coal",
-"metallurgical coal",
-"gold",
-"silver",
-"platinum",
-"palladium",
-"rare earth",
-"rare earths",
-"graphite",
-"zinc",
-"lead",
-"manganese",
-"uranium",
-"smelter",
-"refinery",
-"ore",
-"metal",
-"metals",
-"mineral export",
-"commodity",
-"commodities",
+"manufacturing","factory","industrial","production","plant","assembly","machinery","equipment",
+"fabrication","engineering","tooling","automation","robotics","machining",
 
-/* ENERGY */
+"construction","infrastructure","contractor","megaproject","bridge","tunnel","dam","highway",
+"railway project","port project","airport construction",
 
-"energy",
-"oil",
-"gas",
-"lng",
-"crude",
-"petroleum",
-"refinery",
-"refining",
-"pipeline",
-"offshore drilling",
-"drilling",
-"upstream",
-"downstream",
-"opec",
-"oilfield",
-"oilfield services",
-"power",
-"electricity",
-"power station",
-"power plant",
-"grid",
-"grid operator",
-"utility",
-"renewable",
-"solar",
-"solar farm",
-"wind",
-"windfarm",
-"hydrogen",
-"nuclear",
-"reactor",
-"biofuel",
-"energy storage",
-"battery storage",
+"semiconductor","chip","microchip","processor","gpu","cpu","foundry","fab","silicon","wafer",
+"electronics","hardware","datacenter","server",
 
-/* INDUSTRIAL & MANUFACTURING */
+"battery","batteries","gigafactory","lithium battery","ev battery","electric vehicle","charging station",
 
-"manufacturing",
-"factory",
-"industrial",
-"production",
-"plant",
-"assembly",
-"machinery",
-"equipment",
-"fabrication",
-"engineering",
-"tooling",
-"automation",
-"robotics",
-"machining",
-"industrial plant",
-"production line",
-"heavy industry",
-"industrial equipment",
-"machine tools",
-"industrial automation",
+"automotive","vehicle","carmaker","automaker","electric car","vehicle manufacturing",
 
-/* CONSTRUCTION & INFRASTRUCTURE */
+"aerospace","aircraft","aviation","airline","airport","satellite","rocket","spacecraft",
 
-"construction",
-"infrastructure",
-"engineering project",
-"contractor",
-"megaproject",
-"bridge",
-"tunnel",
-"dam",
-"highway",
-"railway project",
-"port project",
-"airport construction",
-"power infrastructure",
-"civil engineering",
+"agriculture","farming","crop","grain","wheat","corn","soybean","fertiliser","fertilizer",
+"food production","livestock","dairy",
 
-/* SEMICONDUCTORS & ELECTRONICS */
+"chemical","chemicals","petrochemical","ammonia","plastics","polymer","resin","materials",
 
-"semiconductor",
-"chip",
-"chips",
-"microchip",
-"processor",
-"gpu",
-"cpu",
-"foundry",
-"fab",
-"silicon",
-"wafer",
-"electronics",
-"circuit",
-"hardware",
-"datacenter",
-"server",
-"cloud infrastructure",
-"ai chip",
+"telecom","telecommunications","network","broadband","fiber","5g","data infrastructure",
 
-/* BATTERY & EV SUPPLY CHAIN */
+"pharmaceutical","pharma","biotech","vaccine","drug","medicine","laboratory",
 
-"battery",
-"batteries",
-"battery plant",
-"gigafactory",
-"energy storage",
-"lithium battery",
-"ev battery",
-"electric vehicle",
-"ev",
-"charging station",
-"charging network",
-"battery materials",
-"battery metals",
+"strike","walkout","shutdown","closure","halt","suspension","bankruptcy","collapse",
+"industrial action","labour dispute","plant shutdown","factory shutdown","mine shutdown",
+"refinery outage","smelter shutdown",
 
-/* AUTOMOTIVE */
+"congestion","delay","bottleneck","shortage","shipping disruption","freight disruption",
+"port congestion","canal blockage","transport disruption",
 
-"automotive",
-"vehicle",
-"carmaker",
-"automaker",
-"electric car",
-"vehicle manufacturing",
-"auto production",
-"car production",
-"vehicle plant",
-"automotive supply chain",
+"flood","storm","cyclone","hurricane","typhoon","wildfire","bushfire","earthquake",
+"drought","landslide","extreme weather",
 
-/* AEROSPACE & AVIATION */
-
-"aerospace",
-"aircraft",
-"aviation",
-"airline",
-"airport",
-"jet",
-"fighter jet",
-"aircraft manufacturing",
-"satellite",
-"spacecraft",
-"rocket",
-"launch vehicle",
-"space industry",
-
-/* AGRICULTURE & FOOD SUPPLY */
-
-"agriculture",
-"farming",
-"crop",
-"grain",
-"wheat",
-"corn",
-"soybean",
-"fertiliser",
-"fertilizer",
-"food production",
-"livestock",
-"dairy",
-"agricultural export",
-"agriculture supply chain",
-
-/* CHEMICALS & MATERIALS */
-
-"chemical",
-"chemicals",
-"petrochemical",
-"fertilizer plant",
-"ammonia",
-"plastics",
-"polymer",
-"resin",
-"composites",
-"materials",
-"industrial chemicals",
-
-/* TELECOM & NETWORK INFRASTRUCTURE */
-
-"telecom",
-"telecommunications",
-"network",
-"broadband",
-"fiber",
-"satellite internet",
-"5g",
-"data infrastructure",
-
-/* PHARMA & BIOTECH */
-
-"pharmaceutical",
-"pharma",
-"biotech",
-"vaccine",
-"drug manufacturing",
-"medicine",
-"laboratory",
-"medical supply",
-
-/* SUPPLY CHAIN DISRUPTION EVENTS */
-
-"strike",
-"walkout",
-"shutdown",
-"closure",
-"halt",
-"suspension",
-"bankruptcy",
-"collapse",
-"industrial action",
-"labour dispute",
-"plant shutdown",
-"factory shutdown",
-"mine shutdown",
-"refinery outage",
-"smelter shutdown",
-
-/* LOGISTICS DISRUPTION */
-
-"congestion",
-"delay",
-"bottleneck",
-"shortage",
-"shipping disruption",
-"freight disruption",
-"port congestion",
-"canal blockage",
-"transport disruption",
-
-/* WEATHER / NATURAL DISASTERS */
-
-"flood",
-"storm",
-"cyclone",
-"hurricane",
-"typhoon",
-"wildfire",
-"bushfire",
-"earthquake",
-"drought",
-"landslide",
-"extreme weather",
-
-/* GEOPOLITICS */
-
-"war",
-"conflict",
-"invasion",
-"sanctions",
-"embargo",
-"tariff",
-"trade war",
-"blockade",
-"military escalation"
-
+"war","conflict","invasion","sanctions","embargo","tariff","trade war","blockade"
 ];
-  const industrySignals = signals.filter((s:any) =>
-    industryTerms.some(term =>
-      s.title?.toLowerCase().includes(term) ||
-      s.description?.toLowerCase().includes(term)
-    )
-  );
 
-  /* FALLBACK — if filters remove everything */
+  /* Detect industry relevance */
+
+  const industrySignals = signals.filter((s:any) => {
+
+    const text = `${s.title ?? ""} ${s.description ?? ""}`.toLowerCase();
+
+    return industryTerms.some(term => text.includes(term));
+
+  });
+
   const usableSignals = industrySignals.length > 0 ? industrySignals : signals;
 
-const highRisk = signals.filter((s:any) => s.risk_score >= 80);
+  /* Risk Buckets */
 
-const mediumRisk = signals.filter(
-  (s:any) => s.risk_score >= 50 && s.risk_score < 80
-);
+  const highRisk = usableSignals
+    .filter((s:any) => s.risk_score >= 80)
+    .sort((a:any,b:any)=>b.risk_score-a.risk_score);
 
-const lowRisk = signals.filter(
-  (s:any) => s.risk_score >= 20 && s.risk_score < 50
-);
+  const mediumRisk = usableSignals
+    .filter((s:any) => s.risk_score >= 50 && s.risk_score < 80)
+    .sort((a:any,b:any)=>b.risk_score-a.risk_score);
 
-/* fallback: show latest news even if risk = 0 */
-const normalSignals =
-  signals.filter((s:any) => s.risk_score < 30).length > 0
-    ? signals.filter((s:any) => s.risk_score < 30)
-    : signals;
+  const lowRisk = usableSignals
+    .filter((s:any) => s.risk_score >= 20 && s.risk_score < 50)
+    .sort((a:any,b:any)=>b.risk_score-a.risk_score);
+
   /* GLOBAL RISK INDEX */
-const relevantSignals = signals.filter((s:any) => s.risk_score >= 20);
 
-const avgRisk =
-  relevantSignals.length > 0
-    ? Math.round(
-        relevantSignals.reduce(
-          (acc:any, s:any) => acc + (s.risk_score || 0),
-          0
-        ) / relevantSignals.length
-      )
-    : 0;
+  const relevantSignals = usableSignals.filter((s:any) => s.risk_score >= 20);
 
-    <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
+  const avgRisk =
+    relevantSignals.length > 0
+      ? Math.round(
+          relevantSignals.reduce(
+            (acc:any, s:any) => acc + (s.risk_score || 0),
+            0
+          ) / relevantSignals.length
+        )
+      : 0;
 
-      {/* HERO SECTION */}
-      <section
-        className="relative min-h-[90vh] flex items-center justify-center text-center bg-cover bg-center"
-        style={{ backgroundImage: "url('/forest-bg.jpg')" }}
-      >
+  return (
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/75 to-black/80"></div>
+<main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
-        <div className="relative z-10 w-full max-w-5xl px-6">
+{/* HERO */}
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight leading-[1.1]">
-            Discover Verified Industrial Suppliers
-            <br />
-            <span className="text-gray-300 font-semibold">
-              with Structured Capability Intelligence
-            </span>
-          </h1>
+<section
+className="relative min-h-[90vh] flex items-center justify-center text-center bg-cover bg-center"
+style={{ backgroundImage: "url('/forest-bg.jpg')" }}
+>
 
-          <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
-            Connected directly to the National Business Register.
-            AI-driven capability mapping powered by intelligent analysis.
-          </p>
+<div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/75 to-black/80"></div>
 
-          {/* SEARCH CARD */}
-          <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
+<div className="relative z-10 w-full max-w-5xl px-6">
 
-            <h2 className="text-left text-xl font-semibold mb-6 text-gray-800">
-              Search Suppliers
-            </h2>
+<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
+Discover Verified Industrial Suppliers
+</h1>
 
-            <div className="grid md:grid-cols-3 gap-4">
+<p className="text-lg text-gray-300 mb-12">
+AI-powered supplier discovery with real-time supply chain intelligence.
+</p>
 
-              <select className="border rounded-xl p-4">
-                <option>Australia</option>
-              </select>
+</div>
+</section>
 
-              <select className="border rounded-xl p-4">
-                {industries.map((industry) => (
-                  <option key={industry}>{industry}</option>
-                ))}
-              </select>
 
-              <input
-                placeholder="Capability (e.g. Heavy Fabrication)"
-                className="border rounded-xl p-4"
-              />
+{/* LIVE ALERT BAR */}
 
-            </div>
+{highRisk.length > 0 && (
 
-            <a
-              href="/search"
-              className="inline-block mt-6 bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-900 transition"
-            >
-              Search Suppliers
-            </a>
+<section className="bg-red-600 text-white py-2 overflow-hidden">
 
-            <p className="text-xs text-gray-500 mt-4 tracking-wide">
-              Official Business Register Integration · AI Capability Mapping · Structured Industry Taxonomy
-            </p>
+<div className="max-w-7xl mx-auto">
 
-          </div>
+<div className="flex gap-10 animate-marquee whitespace-nowrap">
 
-        </div>
+{highRisk.slice(0,10).map((alert:any,i:number)=>(
 
-      </section>
+<span key={i} className="font-medium">
 
+⚠ {alert.title} (Risk {alert.risk_score})
 
-      {/* LIVE SUPPLY CHAIN ALERT BAR */}
-      {highRisk.length > 0 && (
-        <section className="bg-red-600 text-white py-2 overflow-hidden">
+</span>
 
-          <div className="max-w-7xl mx-auto">
+))}
 
-            <div className="flex gap-10 animate-marquee whitespace-nowrap">
+</div>
 
-              {highRisk.slice(0,10).map((alert:any,i:number)=>(
-                <span key={i} className="font-medium">
-                  ⚠ {alert.title} (Risk {alert.risk_score})
-                </span>
-              ))}
+</div>
 
-            </div>
+</section>
 
-          </div>
+)}
 
-        </section>
-      )}
 
+{/* GLOBAL INDEX */}
 
-      {/* GLOBAL RISK INDEX */}
-      <section className="py-8 bg-white border-b border-gray-200">
+<section className="py-8 bg-white border-b">
 
-        <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
+<div className="max-w-6xl mx-auto px-6 flex justify-between">
 
-          <div>
+<div>
 
-            <h2 className="text-sm uppercase tracking-wide text-gray-500">
-              Global Supply Chain Risk Index
-            </h2>
+<h2 className="text-sm uppercase text-gray-500">
 
-            <div className="text-4xl font-bold text-gray-900">
-              {avgRisk} / 100
-            </div>
+Global Supply Chain Risk Index
 
-          </div>
+</h2>
 
-          <div className="text-sm text-gray-600">
+<div className="text-4xl font-bold">
 
-            {avgRisk >= 60 && <span className="text-red-600 font-semibold">Elevated Risk</span>}
-            {avgRisk >= 30 && avgRisk < 60 && <span className="text-orange-500 font-semibold">Moderate Risk</span>}
-            {avgRisk < 30 && <span className="text-green-600 font-semibold">Normal Conditions</span>}
+{avgRisk} / 100
 
-          </div>
+</div>
 
-        </div>
+</div>
 
-      </section>
+<div>
 
+{avgRisk >= 60 && <span className="text-red-600 font-semibold">Elevated Risk</span>}
+{avgRisk >= 30 && avgRisk < 60 && <span className="text-orange-500 font-semibold">Moderate Risk</span>}
+{avgRisk < 30 && <span className="text-green-600 font-semibold">Normal Conditions</span>}
 
-      {/* SUPPLY CHAIN RISK DASHBOARD */}
-      <section className="py-12 bg-gray-50 border-t border-gray-200">
+</div>
 
-        <div className="max-w-6xl mx-auto px-6">
+</div>
 
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Supply Chain Risk Monitor
-          </h2>
+</section>
 
-          {usableSignals.length === 0 && (
-            <div className="text-sm text-gray-500">
-              No supply chain signals detected yet. RSS crawler may still be running.
-            </div>
-          )}
 
-          <div className="grid md:grid-cols-3 gap-6">
+{/* DASHBOARD */}
 
-            {/* HIGH RISK */}
-            <div>
+<section className="py-12 bg-gray-50">
 
-              <h3 className="text-sm font-semibold text-red-600 mb-4">
-                High Risk
-              </h3>
+<div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-6">
 
-              {highRisk.slice(0,3).map((signal:any) => (
+{/* HIGH */}
 
-                <div
-                  key={signal.title}
-                  className="border-l-4 border-red-600 bg-white rounded-lg p-4 mb-3 hover:shadow-sm transition"
-                >
+<div>
 
-                  <div className="text-xs font-semibold text-red-600 flex items-center gap-2">
-                    <span className="h-2 w-2 bg-red-600 rounded-full"></span>
-                    HIGH RISK · Score {signal.risk_score}
-                  </div>
+<h3 className="text-red-600 font-semibold mb-4">
 
-                  <h3 className="font-semibold text-sm text-gray-900 mt-1">
-                    {signal.title}
-                  </h3>
+High Risk
 
-                </div>
+</h3>
 
-              ))}
+{highRisk.slice(0,3).map((signal:any)=>(
 
-            </div>
+<div key={signal.title} className="border-l-4 border-red-600 bg-white p-4 mb-3">
 
+<div className="text-xs text-red-600 font-semibold">
 
-            {/* MEDIUM RISK */}
-            <div>
+HIGH RISK · Score {signal.risk_score}
 
-              <h3 className="text-sm font-semibold text-orange-500 mb-4">
-                Medium Risk
-              </h3>
+</div>
 
-              {mediumRisk.slice(0,3).map((signal:any) => (
+<div className="font-semibold text-sm mt-1">
 
-                <div
-                  key={signal.title}
-                  className="border-l-4 border-orange-500 bg-white rounded-lg p-4 mb-3 hover:shadow-sm transition"
-                >
+{signal.title}
 
-                  <div className="text-xs font-semibold text-orange-500 flex items-center gap-2">
-                    <span className="h-2 w-2 bg-orange-500 rounded-full"></span>
-                    MEDIUM RISK · Score {signal.risk_score}
-                  </div>
+</div>
 
-                  <h3 className="font-semibold text-sm text-gray-900 mt-1">
-                    {signal.title}
-                  </h3>
+</div>
 
-                </div>
+))}
 
-              ))}
+</div>
 
-            </div>
 
+{/* MEDIUM */}
 
-            {/* NORMAL SIGNALS */}
-            <div>
+<div>
 
-              <h3 className="text-sm font-semibold text-gray-600 mb-4">
-                Industry Signals
-              </h3>
+<h3 className="text-orange-500 font-semibold mb-4">
 
-              {usableSignals.slice(0,3).map((signal:any) => (
+Medium Risk
 
-                <div
-                  key={signal.title}
-                  className="border-l-4 border-gray-300 bg-white rounded-lg p-4 mb-3 hover:shadow-sm transition"
-                >
+</h3>
 
-                  <div className="text-xs font-semibold text-gray-500 flex items-center gap-2">
-                    <span className="h-2 w-2 bg-gray-400 rounded-full"></span>
-                    INDUSTRY SIGNAL
-                  </div>
+{mediumRisk.slice(0,3).map((signal:any)=>(
 
-                  <h3 className="font-semibold text-sm text-gray-900 mt-1">
-                    {signal.title}
-                  </h3>
+<div key={signal.title} className="border-l-4 border-orange-500 bg-white p-4 mb-3">
 
-                </div>
+<div className="text-xs text-orange-500 font-semibold">
 
-              ))}
+MEDIUM RISK · Score {signal.risk_score}
 
-            </div>
+</div>
 
-          </div>
+<div className="font-semibold text-sm mt-1">
 
-        </div>
+{signal.title}
 
-      </section>
+</div>
 
+</div>
 
-      {/* PLATFORM FEATURES */}
-      <section className="py-12 bg-white border-t border-gray-200">
+))}
 
-        <div className="max-w-6xl mx-auto px-6">
+</div>
 
-          <div className="mb-16">
 
-            <h2 className="text-3xl font-semibold text-gray-900 mb-4">
-              Platform Intelligence Infrastructure
-            </h2>
+{/* SIGNALS */}
 
-            <p className="text-gray-600 max-w-2xl">
-              Verified supplier data, structured industry taxonomy and
-              real-time industrial intelligence powering procurement decisions.
-            </p>
+<div>
 
-          </div>
+<h3 className="text-gray-600 font-semibold mb-4">
 
-        </div>
+Industry Signals
 
-      </section>
+</h3>
 
+{usableSignals.slice(0,3).map((signal:any)=>(
 
-      {/* FOOTER */}
-      <footer className="py-12 bg-black text-gray-400 text-center text-sm">
-        © {new Date().getFullYear()} What's the Supplier? · Enterprise Procurement Intelligence
-      </footer>
+<div key={signal.title} className="border-l-4 border-gray-300 bg-white p-4 mb-3">
 
-    </main>
+<div className="text-xs text-gray-500">
 
-  ;
+INDUSTRY SIGNAL
+
+</div>
+
+<div className="font-semibold text-sm mt-1">
+
+{signal.title}
+
+</div>
+
+</div>
+
+))}
+
+</div>
+
+</div>
+
+</section>
+
+
+<footer className="py-12 bg-black text-gray-400 text-center text-sm">
+
+© {new Date().getFullYear()} What's the Supplier?
+
+</footer>
+
+</main>
+
+  );
 
 }
