@@ -49,8 +49,8 @@ export default async function Home() {
   /* FALLBACK — if filters remove everything */
   const usableSignals = industrySignals.length > 0 ? industrySignals : signals;
 
-const highRisk = signals.filter((s:any) => s.risk_score >= 60);
-const mediumRisk = signals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
+const highRisk = usableSignals.filter((s:any) => s.risk_score >= 60);
+const mediumRisk = usableSignals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
 
 /* fallback: show latest news even if risk = 0 */
 const normalSignals =
