@@ -40,11 +40,9 @@ function calculateRiskScore(text: string) {
   const lower = text.toLowerCase();
 
   Object.entries(riskKeywords).forEach(([word, value]) => {
-
     if (lower.includes(word)) {
       score += value;
     }
-
   });
 
   return Math.min(score, 100);
@@ -57,46 +55,6 @@ function calculateRiskScore(text: string) {
 function cleanHtml(html: string | undefined) {
   if (!html) return "";
   return html.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
-}
-
-/* ------------------------------------------------ */
-/* INDUSTRY RELEVANCE FILTER                        */
-/* ------------------------------------------------ */
-
-const industryTerms = [
-  "mining",
-  "lithium",
-  "copper",
-  "iron ore",
-  "nickel",
-  "rare earth",
-  "steel",
-  "fabrication",
-  "manufacturing",
-  "engineering",
-  "industrial",
-  "infrastructure",
-  "energy",
-  "renewable",
-  "gas",
-  "oil",
-  "construction",
-  "supply chain",
-  "logistics",
-  "port",
-  "processing plant",
-  "refinery",
-  "mineral",
-  "smelter",
-  "equipment",
-  "machinery"
-];
-
-function isIndustryRelevant(text: string) {
-
-  const lower = text.toLowerCase();
-
-  return industryTerms.some(term => lower.includes(term));
 }
 
 /* ------------------------------------------------ */
@@ -177,41 +135,43 @@ export async function GET() {
 
           for (const item of feed.items) {
 
-           const title = cleanHtml(item.title);
-const description = cleanHtml(item.contentSnippet || item.content);
+            const title = cleanHtml(item.title);
+            const description = cleanHtml(item.contentSnippet || item.content);
 
-const combined = `${title} ${description}`.toLowerCase();
+            const combined = `${title} ${description}`.toLowerCase();
 
-/* Detect industry relevance */
-const industryRelevant = isIndustryRelevant(combined);
+            const guid = item.guid || item.link;
+            if (!guid) continue;
 
-/* Match industry keywords table */
-const match = keywords?.find(k =>
-  combined.includes(k.keyword.toLowerCase())
-);
+            if (!item.pubDate) continue;
 
-/* Detect risk signals */
-const riskScore = calculateRiskScore(combined);
+            const articleDate = new Date(item.pubDate);
 
+            /* Only keep articles from last 48 hours */
+            const tenDaysAgo = new Date();
+            tenDaysAgo.setDate(tenDaysAgo.getDate() - 2);
 
-// Only skip articles that are clearly unrelated
-if (!industryRelevant) continue;
+            if (articleDate < tenDaysAgo) continue;
 
-const guid = item.guid || item.link;
-if (!guid) continue;
+            /* Detect risk signals */
+            const riskScore = calculateRiskScore(combined);
 
-if (!item.pubDate) continue;
+            /* Optional industry keyword match */
+            const match = keywords?.find(k =>
+              combined.includes(k.keyword.toLowerCase())
+            );
 
-articles.push({
-  industry_id: match?.industry_id ?? null,
-  rss_source_id: source.id,
-  title,
-  description,
-  url: item.link || "",
-  guid,
-  risk_score: riskScore,
-  published_at: new Date(item.pubDate)
-});
+            articles.push({
+              industry_id: match?.industry_id ?? null,
+              rss_source_id: source.id,
+              title,
+              description,
+              url: item.link || "",
+              guid,
+              risk_score: riskScore,
+              published_at: articleDate
+            });
+
           }
 
           /* Batch insert */
