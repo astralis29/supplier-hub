@@ -49,6 +49,38 @@ return newsNoise.some(word => text.includes(word));
 }
 
 /* ------------------------------------------------ */
+/* PROCUREMENT SIGNAL FILTER (NEW)                  */
+/* ------------------------------------------------ */
+
+const procurementSignals = [
+"factory",
+"plant",
+"manufacturing",
+"mine",
+"mining",
+"port",
+"shipping",
+"logistics",
+"supply chain",
+"production",
+"industrial",
+"commodity",
+"export",
+"import",
+"freight",
+"cargo",
+"refinery",
+"pipeline",
+"energy",
+"semiconductor",
+"battery"
+];
+
+function hasProcurementSignal(text:string){
+return procurementSignals.some(word => text.includes(word));
+}
+
+/* ------------------------------------------------ */
 /* INDUSTRIAL CONTEXT FILTER                        */
 /* ------------------------------------------------ */
 
@@ -244,7 +276,7 @@ strike:70, walkout:70, "port strike":80, "rail strike":80,
 shutdown:70, closure:70, collapse:80,
 bankruptcy:80, insolvency:80,
 
-explosion:70, fire:60, accident:60, derailment:70,
+explosion:70, bushfire:60, accident:60, derailment:70,
 "factory fire":70, "plant fire":70, "mine collapse":80,
 
 outage:60, blackout:60, "power outage":60,
@@ -253,7 +285,7 @@ congestion:40, delay:40, disruption:50, shortage:50,
 
 sanctions:60, war:80, invasion:80, blockade:70,
 
-cyclone:60, hurricane:60, storm:50,
+cyclone:60, hurricane:60, "tropical storm":50,
 flood:50, wildfire:60, earthquake:70
 
 };
@@ -288,7 +320,7 @@ disruptionPatterns.forEach(({pattern,score:value})=>{
 if(pattern.test(text)) score += value;
 });
 
-if(score > 80) score = 80;   // improvement to stop false 100 spikes
+if(score > 80) score = 80;
 
 return score;
 
@@ -450,13 +482,20 @@ for(const item of feed.items){
 const title = cleanHtml(item.title);
 const description = cleanHtml(item.contentSnippet || item.content);
 
-const combined = normalizeText(`${title} ${description}`);
+const titleText = normalizeText(title);
+const bodyText = normalizeText(description);
+const combined = `${titleText} ${bodyText}`;
 
 const guid = item.guid || item.link;
 if(!guid || !item.pubDate) continue;
 
 if(isNewsNoise(combined)) continue;
-if(!isIndustrialContext(combined)) continue;
+
+/* PROCUREMENT RELEVANCE FILTER */
+
+if(!hasProcurementSignal(combined)) continue;
+
+if(!isIndustrialContext(titleText) && !isIndustrialContext(bodyText)) continue;
 
 const articleDate = new Date(item.pubDate || Date.now());
 
