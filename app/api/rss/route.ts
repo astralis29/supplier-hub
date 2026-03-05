@@ -46,6 +46,7 @@ const riskKeywords: Record<string, number> = {
   outage: 60,
   blackout: 60,
   "power outage": 60,
+  Closes: 80,
 
   /* supply chain disruptions */
 
@@ -63,6 +64,7 @@ const riskKeywords: Record<string, number> = {
   suspension: 50,
 
   slowdown: 30,
+  Tensions: 30,
 
   /* logistics / transport */
 
@@ -84,6 +86,7 @@ const riskKeywords: Record<string, number> = {
   "cargo backlog": 40,
 
   "canal blockage": 70,
+  "Disruptions":50,
 
   /* mining / extraction */
 
@@ -141,6 +144,8 @@ const riskKeywords: Record<string, number> = {
   war: 60,
   invasion: 60,
   blockade: 60,
+  Defence:60,
+  Strikes:50,
 
   /* financial distress */
 
