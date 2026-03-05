@@ -11,18 +11,20 @@ NO filtering here — homepage handles filtering
 */
 export async function getIndustrySignals() {
 
-  const { data, error } = await supabase
-    .from("industry_news")
-    .select(`
-      title,
-      description,
-      url,
-      published_at,
-      risk_score,
-      supply_chain_score
-    `)
-    .order("published_at", { ascending: false })
-    .limit(30);
+const { data, error } = await supabase
+.from("industry_news")
+.select(`
+  title,
+  description,
+  url,
+  published_at,
+  risk_score,
+  supply_chain_score
+`)
+.gte("risk_score", 40)
+.or("supply_chain_score.gte.20,event_type.not.is.null,chokepoint.not.is.null")
+.order("published_at", { ascending: false })
+.limit(30);
 
   if (error) {
     console.log("Signals error:", error);
