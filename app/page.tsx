@@ -16,9 +16,51 @@ export default async function Home() {
 
   const signals = await getIndustrySignals() ?? [];
 
-  const highRisk = signals.filter((s:any) => s.risk_score >= 60);
-  const mediumRisk = signals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
-  const normalSignals = signals.filter((s:any) => s.risk_score < 30);
+  /* INDUSTRY FILTER */
+  const industryTerms = [
+    "mining",
+    "mine",
+    "lithium",
+    "copper",
+    "iron ore",
+    "steel",
+    "manufacturing",
+    "factory",
+    "engineering",
+    "energy",
+    "gas",
+    "oil",
+    "construction",
+    "infrastructure",
+    "logistics",
+    "port",
+    "supply chain",
+    "machinery",
+    "equipment"
+  ];
+
+  const industrySignals = signals.filter((s:any) =>
+    industryTerms.some(term =>
+      s.title?.toLowerCase().includes(term) ||
+      s.description?.toLowerCase().includes(term)
+    )
+  );
+
+  /* FALLBACK — if filters remove everything */
+  const usableSignals = industrySignals.length > 0 ? industrySignals : signals;
+
+  const highRisk = usableSignals.filter((s:any) => s.risk_score >= 60);
+  const mediumRisk = usableSignals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
+  const normalSignals = usableSignals.filter((s:any) => s.risk_score < 30);
+
+  /* GLOBAL RISK INDEX */
+  const avgRisk =
+    usableSignals.length > 0
+      ? Math.round(
+          usableSignals.reduce((acc:any, s:any) => acc + (s.risk_score || 0), 0) /
+          usableSignals.length
+        )
+      : 0;
 
   return (
 
@@ -91,6 +133,58 @@ export default async function Home() {
       </section>
 
 
+      {/* LIVE SUPPLY CHAIN ALERT BAR */}
+      {highRisk.length > 0 && (
+        <section className="bg-red-600 text-white py-2 overflow-hidden">
+
+          <div className="max-w-7xl mx-auto">
+
+            <div className="flex gap-10 animate-marquee whitespace-nowrap">
+
+              {highRisk.slice(0,10).map((alert:any,i:number)=>(
+                <span key={i} className="font-medium">
+                  ⚠ {alert.title} (Risk {alert.risk_score})
+                </span>
+              ))}
+
+            </div>
+
+          </div>
+
+        </section>
+      )}
+
+
+      {/* GLOBAL RISK INDEX */}
+      <section className="py-8 bg-white border-b border-gray-200">
+
+        <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
+
+          <div>
+
+            <h2 className="text-sm uppercase tracking-wide text-gray-500">
+              Global Supply Chain Risk Index
+            </h2>
+
+            <div className="text-4xl font-bold text-gray-900">
+              {avgRisk} / 100
+            </div>
+
+          </div>
+
+          <div className="text-sm text-gray-600">
+
+            {avgRisk >= 60 && <span className="text-red-600 font-semibold">Elevated Risk</span>}
+            {avgRisk >= 30 && avgRisk < 60 && <span className="text-orange-500 font-semibold">Moderate Risk</span>}
+            {avgRisk < 30 && <span className="text-green-600 font-semibold">Normal Conditions</span>}
+
+          </div>
+
+        </div>
+
+      </section>
+
+
       {/* SUPPLY CHAIN RISK DASHBOARD */}
       <section className="py-12 bg-gray-50 border-t border-gray-200">
 
@@ -99,6 +193,12 @@ export default async function Home() {
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Supply Chain Risk Monitor
           </h2>
+
+          {usableSignals.length === 0 && (
+            <div className="text-sm text-gray-500">
+              No supply chain signals detected yet. RSS crawler may still be running.
+            </div>
+          )}
 
           <div className="grid md:grid-cols-3 gap-6">
 
@@ -124,10 +224,6 @@ export default async function Home() {
                   <h3 className="font-semibold text-sm text-gray-900 mt-1">
                     {signal.title}
                   </h3>
-
-                  <div className="text-xs text-gray-400 mt-2">
-                    {new Date(signal.published_at).toLocaleDateString()}
-                  </div>
 
                 </div>
 
@@ -159,10 +255,6 @@ export default async function Home() {
                     {signal.title}
                   </h3>
 
-                  <div className="text-xs text-gray-400 mt-2">
-                    {new Date(signal.published_at).toLocaleDateString()}
-                  </div>
-
                 </div>
 
               ))}
@@ -193,10 +285,6 @@ export default async function Home() {
                     {signal.title}
                   </h3>
 
-                  <div className="text-xs text-gray-400 mt-2">
-                    {new Date(signal.published_at).toLocaleDateString()}
-                  </div>
-
                 </div>
 
               ))}
@@ -225,73 +313,6 @@ export default async function Home() {
               Verified supplier data, structured industry taxonomy and
               real-time industrial intelligence powering procurement decisions.
             </p>
-
-          </div>
-
-
-          <div className="grid md:grid-cols-2 gap-x-16 gap-y-12">
-
-            <div className="border-l-4 border-gray-900 pl-6">
-
-              <div className="flex items-center gap-2 mb-3">
-                <span className="h-2 w-2 bg-gray-900 rounded-full"></span>
-                <span className="text-xs uppercase tracking-widest text-gray-500">
-                  Live Industry Intelligence
-                </span>
-              </div>
-
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Real-Time Industrial Signals
-              </h3>
-
-              <p className="text-gray-600 leading-relaxed">
-                Project announcements, regulatory changes and supply chain
-                developments mapped to structured industry categories.
-              </p>
-
-            </div>
-
-
-            <div className="border-l-4 border-gray-300 pl-6">
-
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Verified Business Data
-              </h3>
-
-              <p className="text-gray-600 leading-relaxed">
-                Direct integration with the National Business Register ensures
-                entity accuracy, status validation and structured records.
-              </p>
-
-            </div>
-
-
-            <div className="border-l-4 border-gray-300 pl-6">
-
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                AI Capability Mapping
-              </h3>
-
-              <p className="text-gray-600 leading-relaxed">
-                Automated domain intelligence extracts supplier capabilities,
-                certifications and operational indicators at scale.
-              </p>
-
-            </div>
-
-
-            <div className="border-l-4 border-gray-300 pl-6">
-
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Industry Classification
-              </h3>
-
-              <p className="text-gray-600 leading-relaxed">
-                Structured taxonomy across mining, manufacturing, engineering
-                and industrial supply chains.
-              </p>
-
-            </div>
 
           </div>
 
