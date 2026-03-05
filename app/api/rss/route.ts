@@ -137,7 +137,7 @@ const riskKeywords: Record<string, number> = {
 };
 
 function containsKeyword(text: string, keyword: string) {
-  return new RegExp(`\\b${keyword}\\b`).test(text);
+  return text.includes(keyword);
 }
 
 function calculateRiskScore(text: string) {
