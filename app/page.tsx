@@ -2,114 +2,160 @@ export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
 import { getIndustrySignals } from "@/lib/data";
+import { useRouter } from "next/navigation";
 
-const industries = [
-  "Mining",
-  "Manufacturing",
-  "Energy",
-  "Construction",
-  "Engineering",
-  "Logistics",
-];
+/* ---------------- SEARCH COMPONENT ---------------- */
+
+function SearchBar() {
+
+"use client"
+
+const router = useRouter()
+
+function handleSearch(formData: FormData){
+
+const country = formData.get("country")
+const industry = formData.get("industry")
+const capability = formData.get("capability")
+
+const params = new URLSearchParams()
+
+if(country) params.append("country",country.toString())
+if(industry) params.append("industry",industry.toString())
+if(capability) params.append("capability",capability.toString())
+
+router.push(`/search?${params.toString()}`)
+
+}
+
+return (
+
+<form action={handleSearch} className="flex flex-wrap justify-center gap-4">
+
+<select
+name="country"
+className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
+>
+<option value="">Country</option>
+<option value="Australia">Australia</option>
+<option value="United States">United States</option>
+<option value="China">China</option>
+<option value="Germany">Germany</option>
+<option value="United Kingdom">United Kingdom</option>
+</select>
+
+
+<select
+name="industry"
+className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
+>
+<option value="">Industry</option>
+<option value="Mining">Mining</option>
+<option value="Manufacturing">Manufacturing</option>
+<option value="Energy">Energy</option>
+<option value="Construction">Construction</option>
+<option value="Engineering">Engineering</option>
+<option value="Logistics">Logistics</option>
+</select>
+
+
+<select
+name="capability"
+className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
+>
+<option value="">Capability</option>
+<option value="Fabrication">Fabrication</option>
+<option value="Machining">Machining</option>
+<option value="Casting">Casting</option>
+<option value="Engineering">Engineering</option>
+<option value="Automation">Automation</option>
+</select>
+
+
+<button
+type="submit"
+className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+>
+Search
+</button>
+
+</form>
+
+)
+
+}
+
+/* ---------------- HOME PAGE ---------------- */
 
 export default async function Home() {
 
-  const signals = await getIndustrySignals() ?? [];
+const signals = await getIndustrySignals() ?? []
 
-  /* INDUSTRY FILTER */
+/* INDUSTRY FILTER */
 
 const industryTerms = [
-
 "freight","logistics","shipping","cargo","container","port","harbour","dock","terminal","supply chain",
 "trade","transport","rail","railway","rail freight","trucking","truck","haulage","air cargo","air freight",
 "shipping lane","canal","tanker","bulk carrier","cargo ship","container ship","freight route","transport corridor",
-
 "mining","mine","mineral","minerals","lithium","copper","iron ore","nickel","cobalt","bauxite","aluminium",
 "steel","coal","metallurgical coal","gold","silver","platinum","palladium","rare earth","rare earths",
 "graphite","zinc","lead","manganese","uranium","smelter","refinery","ore","metal","metals","commodity",
-
 "energy","oil","gas","lng","crude","petroleum","refining","pipeline","offshore drilling","drilling",
 "upstream","downstream","opec","power","electricity","power plant","grid","utility","renewable","solar",
 "wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage",
-
 "manufacturing","factory","industrial","production","plant","assembly","machinery","equipment",
 "fabrication","engineering","tooling","automation","robotics","machining",
-
 "construction","infrastructure","contractor","megaproject","bridge","tunnel","dam","highway",
 "railway project","port project","airport construction",
-
 "semiconductor","chip","microchip","processor","gpu","cpu","foundry","fab","silicon","wafer",
 "electronics","hardware","datacenter","server",
-
 "battery","batteries","gigafactory","lithium battery","ev battery","electric vehicle","charging station",
-
 "automotive","vehicle","carmaker","automaker","electric car","vehicle manufacturing",
-
 "aerospace","aircraft","aviation","airline","airport","satellite","rocket","spacecraft",
-
 "agriculture","farming","crop","grain","wheat","corn","soybean","fertiliser","fertilizer",
 "food production","livestock","dairy",
-
 "chemical","chemicals","petrochemical","ammonia","plastics","polymer","resin","materials",
-
 "telecom","telecommunications","network","broadband","fiber","5g","data infrastructure",
-
 "pharmaceutical","pharma","biotech","vaccine","drug","medicine","laboratory",
-
 "strike","walkout","shutdown","closure","halt","suspension","bankruptcy","collapse",
 "industrial action","labour dispute","plant shutdown","factory shutdown","mine shutdown",
 "refinery outage","smelter shutdown",
-
 "congestion","delay","bottleneck","shortage","shipping disruption","freight disruption",
 "port congestion","canal blockage","transport disruption",
-
 "flood","storm","cyclone","hurricane","typhoon","wildfire","bushfire","earthquake",
 "drought","landslide","extreme weather",
-
 "war","conflict","invasion","sanctions","embargo","tariff","trade war","blockade"
-];
+]
 
-  /* Detect industry relevance */
+const industrySignals = signals.filter((s:any)=>{
 
-  const industrySignals = signals.filter((s:any) => {
+const text = `${s.title ?? ""} ${s.description ?? ""}`.toLowerCase()
 
-    const text = `${s.title ?? ""} ${s.description ?? ""}`.toLowerCase();
+return industryTerms.some(term=>text.includes(term))
 
-    return industryTerms.some(term => text.includes(term));
+})
 
-  });
+const usableSignals = industrySignals.length > 0 ? industrySignals : signals
 
-  const usableSignals = industrySignals.length > 0 ? industrySignals : signals;
+const highRisk = usableSignals
+.filter((s:any)=>s.risk_score >= 80)
+.sort((a:any,b:any)=>b.risk_score-a.risk_score)
 
-  /* Risk Buckets */
+const mediumRisk = usableSignals
+.filter((s:any)=>s.risk_score >= 50 && s.risk_score < 80)
+.sort((a:any,b:any)=>b.risk_score-a.risk_score)
 
-  const highRisk = usableSignals
-    .filter((s:any) => s.risk_score >= 80)
-    .sort((a:any,b:any)=>b.risk_score-a.risk_score);
+const relevantSignals = usableSignals.filter((s:any)=>s.risk_score >= 20)
 
-  const mediumRisk = usableSignals
-    .filter((s:any) => s.risk_score >= 50 && s.risk_score < 80)
-    .sort((a:any,b:any)=>b.risk_score-a.risk_score);
+const avgRisk =
+relevantSignals.length > 0
+? Math.round(
+relevantSignals.reduce((acc:any,s:any)=>acc+(s.risk_score||0),0) /
+relevantSignals.length
+)
+: 0
 
-  const lowRisk = usableSignals
-    .filter((s:any) => s.risk_score >= 20 && s.risk_score < 50)
-    .sort((a:any,b:any)=>b.risk_score-a.risk_score);
-
-  /* GLOBAL RISK INDEX */
-
-  const relevantSignals = usableSignals.filter((s:any) => s.risk_score >= 20);
-
-  const avgRisk =
-    relevantSignals.length > 0
-      ? Math.round(
-          relevantSignals.reduce(
-            (acc:any, s:any) => acc + (s.risk_score || 0),
-            0
-          ) / relevantSignals.length
-        )
-      : 0;
-
-  return (
+return (
 
 <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
@@ -128,15 +174,19 @@ style={{ backgroundImage: "url('/forest-bg.jpg')" }}
 Discover Verified Industrial Suppliers
 </h1>
 
-<p className="text-lg text-gray-300 mb-12">
+<p className="text-lg text-gray-300 mb-10">
 AI-powered supplier discovery with real-time supply chain intelligence.
 </p>
+
+{/* SEARCH BAR */}
+
+<SearchBar/>
 
 </div>
 </section>
 
 
-{/* LIVE ALERT BAR */}
+{/* ALERT BAR */}
 
 {highRisk.length > 0 && (
 
@@ -147,13 +197,9 @@ AI-powered supplier discovery with real-time supply chain intelligence.
 <div className="flex gap-10 animate-marquee whitespace-nowrap">
 
 {highRisk.slice(0,10).map((alert:any,i:number)=>(
-
 <span key={i} className="font-medium">
-
 ⚠ {alert.title} (Risk {alert.risk_score})
-
 </span>
-
 ))}
 
 </div>
@@ -174,15 +220,11 @@ AI-powered supplier discovery with real-time supply chain intelligence.
 <div>
 
 <h2 className="text-sm uppercase text-gray-500">
-
 Global Supply Chain Risk Index
-
 </h2>
 
 <div className="text-4xl font-bold">
-
 {avgRisk} / 100
-
 </div>
 
 </div>
@@ -206,100 +248,61 @@ Global Supply Chain Risk Index
 
 <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-6">
 
-{/* HIGH */}
-
 <div>
 
 <h3 className="text-red-600 font-semibold mb-4">
-
 High Risk
-
 </h3>
 
 {highRisk.slice(0,3).map((signal:any)=>(
-
 <div key={signal.title} className="border-l-4 border-red-600 bg-white p-4 mb-3">
-
 <div className="text-xs text-red-600 font-semibold">
-
 HIGH RISK · Score {signal.risk_score}
-
 </div>
-
 <div className="font-semibold text-sm mt-1">
-
 {signal.title}
-
 </div>
-
 </div>
-
 ))}
 
 </div>
 
-
-{/* MEDIUM */}
 
 <div>
 
 <h3 className="text-orange-500 font-semibold mb-4">
-
 Medium Risk
-
 </h3>
 
 {mediumRisk.slice(0,3).map((signal:any)=>(
-
 <div key={signal.title} className="border-l-4 border-orange-500 bg-white p-4 mb-3">
-
 <div className="text-xs text-orange-500 font-semibold">
-
 MEDIUM RISK · Score {signal.risk_score}
-
 </div>
-
 <div className="font-semibold text-sm mt-1">
-
 {signal.title}
-
 </div>
-
 </div>
-
 ))}
 
 </div>
 
 
-{/* SIGNALS */}
-
 <div>
 
 <h3 className="text-gray-600 font-semibold mb-4">
-
 Industry Signals
-
 </h3>
 
 {usableSignals.slice(0,3).map((signal:any)=>(
-
 <div key={signal.title} className="border-l-4 border-gray-300 bg-white p-4 mb-3">
-
 <div className="text-xs text-gray-500">
-
 INDUSTRY SIGNAL
-
 </div>
-
 <div className="font-semibold text-sm mt-1">
-
 {signal.title}
-
 </div>
-
 </div>
-
 ))}
 
 </div>
@@ -310,13 +313,11 @@ INDUSTRY SIGNAL
 
 
 <footer className="py-12 bg-black text-gray-400 text-center text-sm">
-
 © {new Date().getFullYear()} What's the Supplier?
-
 </footer>
 
 </main>
 
-  );
+)
 
 }
