@@ -543,9 +543,13 @@ export async function GET() {
 
           if (articles.length > 0) {
 
-            await supabase
-              .from("industry_news")
-              .upsert(articles, { onConflict: "guid" });
+            const { data, error } = await supabase
+  .from("industry_news")
+  .upsert(articles, { onConflict: "guid" });
+
+if (error) {
+  console.error("SUPABASE INSERT ERROR:", error);
+}
 
             return { processed: true, inserted: articles.length };
 
