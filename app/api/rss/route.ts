@@ -121,30 +121,256 @@ function calculateRiskScore(text: string) {
 
 const supplyChainKeywords: Record<string, number> = {
 
-  mining: 20,
-  lithium: 25,
-  copper: 25,
-  iron: 20,
-  nickel: 20,
+
+  /* ENERGY */
 
   oil: 25,
+  crude: 25,
+  petroleum: 25,
   gas: 25,
   lng: 25,
   refinery: 25,
+  refining: 20,
   pipeline: 20,
+  drilling: 20,
+  offshore: 20,
+  upstream: 20,
+  downstream: 20,
+  opec: 20,
+  energy: 20,
+  power: 20,
+  electricity: 20,
+  grid: 20,
+  utility: 20,
+  renewable: 20,
+  solar: 20,
+  wind: 20,
+  windfarm: 20,
+  hydrogen: 20,
+  nuclear: 25,
+  uranium: 25,
+  reactor: 20,
+  turbine: 20,
+  biofuel: 20,
 
-  logistics: 20,
+
+  /* DEFENCE */
+
+  defence: 25,
+  defense: 25,
+  military: 25,
+  army: 20,
+  navy: 20,
+  airforce: 20,
+  weapons: 20,
+  missile: 20,
+  drone: 20,
+  fighter: 20,
+  jet: 20,
+  submarine: 20,
+  radar: 20,
+  artillery: 20,
+  ammunition: 20,
+  warship: 20,
+  shipyard: 20,
+  satellite: 20,
+  spaceforce: 20,
+  ballistic: 20,
+  hypersonic: 20,
+
+
+  /* MINING & METALS */
+
+  mining: 25,
+  mine: 25,
+  copper: 25,
+  iron: 20,
+  ironore: 20,
+  nickel: 20,
+  lithium: 25,
+  cobalt: 25,
+  zinc: 20,
+  lead: 20,
+  aluminium: 20,
+  bauxite: 20,
+  steel: 20,
+  coal: 20,
+  gold: 20,
+  silver: 20,
+  platinum: 20,
+  palladium: 20,
+  rareearth: 25,
+  rareearths: 25,
+  graphite: 20,
+  manganese: 20,
+  commodity: 15,
+  commodities: 15,
+  smelter: 20,
+  metallurgical: 20,
+
+
+  /* BATTERIES / EV */
+
+  battery: 20,
+  batteries: 20,
+  ev: 20,
+  electricvehicle: 20,
+  cathode: 20,
+  anode: 20,
+  gigafactory: 25,
+  charging: 20,
+  chargingstation: 20,
+  energy_storage: 20,
+
+
+  /* SEMICONDUCTORS / TECHNOLOGY */
+
+  semiconductor: 25,
+  chip: 25,
+  chips: 25,
+  fab: 20,
+  foundry: 20,
+  silicon: 20,
+  wafer: 20,
+  microchip: 20,
+  processor: 20,
+  gpu: 20,
+  cpu: 20,
+  ai: 15,
+  datacenter: 20,
+  cloud: 20,
+  server: 20,
+  electronics: 20,
+  hardware: 20,
+
+
+  /* MANUFACTURING / INDUSTRIAL */
+
+  factory: 20,
+  manufacturing: 20,
+  plant: 20,
+  production: 20,
+  industrial: 20,
+  machinery: 20,
+  equipment: 20,
+  automation: 20,
+  robotics: 20,
+  assembly: 20,
+  fabrication: 20,
+  machining: 20,
+  tooling: 20,
+
+
+  /* LOGISTICS / TRANSPORT */
+
   port: 20,
   shipping: 20,
   freight: 20,
+  logistics: 20,
+  cargo: 20,
+  container: 20,
+  vessel: 20,
+  tanker: 20,
+  bulkcarrier: 20,
+  shippinglane: 20,
   rail: 15,
+  railway: 15,
+  trucking: 15,
+  transport: 15,
+  airline: 20,
+  airport: 20,
+  aviation: 20,
 
-  manufacturing: 20,
-  factory: 20,
-  production: 20,
 
-  infrastructure: 15,
-  construction: 15
+  /* INFRASTRUCTURE */
+
+  infrastructure: 20,
+  construction: 20,
+  bridge: 20,
+  tunnel: 20,
+  highway: 20,
+  dam: 20,
+  railwayproject: 20,
+  portproject: 20,
+  megaproject: 20,
+  engineering: 20,
+  contractor: 20,
+
+
+  /* CHEMICALS / MATERIALS */
+
+  chemical: 20,
+  chemicals: 20,
+  petrochemical: 20,
+  fertilizer: 20,
+  ammonia: 20,
+  plastics: 20,
+  polymer: 20,
+  resin: 20,
+  composites: 20,
+  steelplant: 20,
+  materials: 20,
+
+
+  /* AGRICULTURE / FOOD */
+
+  agriculture: 20,
+  farming: 20,
+  wheat: 20,
+  corn: 20,
+  grain: 20,
+  soybean: 20,
+  fertilizer: 20,
+  foodproduction: 20,
+  livestock: 20,
+  dairy: 20,
+  crop: 20,
+
+
+  /* AEROSPACE */
+
+  aerospace: 25,
+  aircraft: 25,
+  aviation: 20,
+  satellite: 20,
+  rocket: 20,
+  spacex: 20,
+  launch: 20,
+  spacecraft: 20,
+
+
+  /* AUTOMOTIVE */
+
+  automotive: 20,
+  vehicle: 20,
+  carmaker: 20,
+  automaker: 20,
+  electriccar: 20,
+  batteryplant: 20,
+  drivetrain: 20,
+
+
+  /* TELECOM / NETWORKS */
+
+  telecom: 20,
+  telecommunications: 20,
+  network: 20,
+  broadband: 20,
+  5g: 20,
+  fiber: 20,
+  satelliteinternet: 20,
+
+
+  /* PHARMA / BIOTECH */
+
+  pharmaceutical: 20,
+  pharma: 20,
+  biotech: 20,
+  vaccine: 20,
+  drug: 20,
+  medicine: 20,
+  laboratory: 20
+
 };
 
 function calculateSupplyChainScore(text: string) {
@@ -300,7 +526,7 @@ export async function GET() {
             const industryId = detectIndustry(combined, keywords || []);
 
             /* Skip useless news */
-            if (riskScore === 0 && supplyScore === 0) continue;
+           if (riskScore === 0 && supplyScore === 0 && !industryId) continue;
 
             articles.push({
               industry_id: industryId,
