@@ -177,39 +177,40 @@ export async function GET() {
 
           for (const item of feed.items) {
 
-            const title = cleanHtml(item.title);
-            const description = cleanHtml(item.contentSnippet || item.content);
+           const title = cleanHtml(item.title);
+const description = cleanHtml(item.contentSnippet || item.content);
 
-            const combined = `${title} ${description}`.toLowerCase();
+const combined = `${title} ${description}`.toLowerCase();
 
-            /* Skip irrelevant general news */
-            if (!isIndustryRelevant(combined)) continue;
+/* Detect industry relevance */
+const industryRelevant = isIndustryRelevant(combined);
 
-            /* Match industry keyword */
-            const match = keywords?.find(k =>
-              combined.includes(k.keyword.toLowerCase())
-            );
+/* Match industry keywords table */
+const match = keywords?.find(k =>
+  combined.includes(k.keyword.toLowerCase())
+);
 
-            if (!match) continue;
+/* Detect risk signals */
+const riskScore = calculateRiskScore(combined);
 
-            const guid = item.guid || item.link;
-            if (!guid) continue;
+/* Only keep article if it has industrial relevance OR risk */
+if (!industryRelevant && !match && riskScore === 0) continue;
 
-            if (!item.pubDate) continue;
+const guid = item.guid || item.link;
+if (!guid) continue;
 
-            const riskScore = calculateRiskScore(combined);
+if (!item.pubDate) continue;
 
-            articles.push({
-              industry_id: match.industry_id,
-              rss_source_id: source.id,
-              title,
-              description,
-              url: item.link || "",
-              guid,
-              risk_score: riskScore,
-              published_at: new Date(item.pubDate)
-            });
-
+articles.push({
+  industry_id: match?.industry_id ?? null,
+  rss_source_id: source.id,
+  title,
+  description,
+  url: item.link || "",
+  guid,
+  risk_score: riskScore,
+  published_at: new Date(item.pubDate)
+});
           }
 
           /* Batch insert */
