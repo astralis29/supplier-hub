@@ -320,7 +320,7 @@ const supplyChainKeywords: Record<string, number> = {
   corn: 20,
   grain: 20,
   soybean: 20,
-  fertilizer: 20,
+  fertiliser: 20,
   foodproduction: 20,
   livestock: 20,
   dairy: 20,
@@ -331,8 +331,8 @@ const supplyChainKeywords: Record<string, number> = {
 
   aerospace: 25,
   aircraft: 25,
-  aviation: 20,
-  satellite: 20,
+  aviations: 20,
+  satellites: 20,
   rocket: 20,
   spacex: 20,
   launch: 20,
@@ -356,7 +356,6 @@ const supplyChainKeywords: Record<string, number> = {
   telecommunications: 20,
   network: 20,
   broadband: 20,
-  5g: 20,
   fiber: 20,
   satelliteinternet: 20,
 
