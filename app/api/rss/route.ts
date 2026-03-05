@@ -18,7 +18,23 @@ const supabase = createClient(
 );
 
 /* ------------------------------------------------ */
-/* EXPANDED RISK KEYWORDS + SCORING                 */
+/* TEXT NORMALIZATION                               */
+/* ------------------------------------------------ */
+
+function normalizeText(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")   // remove punctuation
+    .replace(/\s+/g, " ")       // collapse spaces
+    .trim();
+}
+
+function containsKeyword(text: string, keyword: string) {
+  return text.includes(keyword.toLowerCase());
+}
+
+/* ------------------------------------------------ */
+/* RISK KEYWORDS + SCORING                          */
 /* ------------------------------------------------ */
 
 const riskKeywords: Record<string, number> = {
@@ -29,169 +45,119 @@ const riskKeywords: Record<string, number> = {
   closure: 70,
   collapse: 70,
   bankruptcy: 80,
-  insolvency: 80,
-  liquidation: 80,
 
   explosion: 70,
   fire: 60,
   accident: 60,
-  incident: 50,
   derailment: 60,
-  spill: 50,
-  "chemical leak": 60,
-  "gas leak": 60,
 
   outage: 60,
   blackout: 60,
-  "power outage": 60,
 
   shortage: 50,
-  scarcity: 50,
   delay: 40,
   disruption: 45,
-  bottleneck: 40,
   congestion: 40,
-  backlog: 40,
 
   halt: 50,
-  halted: 50,
   suspended: 50,
 
-  slowdown: 30,
   tensions: 30,
 
-  "port strike": 70,
-  "port congestion": 50,
-  "shipping disruption": 50,
-  "freight disruption": 50,
+  "port strike": 80,
+  "port congestion": 60,
+  "shipping disruption": 60,
+  "freight disruption": 60,
 
-  "rail disruption": 60,
-  "rail strike": 70,
+  "rail disruption": 70,
+  "rail strike": 80,
 
-  "trucking strike": 70,
+  "mine shutdown": 80,
+  "mine closure": 80,
 
-  "logistics disruption": 50,
-  "cargo backlog": 40,
+  "refinery outage": 70,
+  "smelter shutdown": 70,
 
-  "canal blockage": 70,
-
-  "mine shutdown": 70,
-  "mine closure": 70,
-  "mine accident": 70,
-
-  "production halt": 60,
-  "output cut": 50,
-
-  "refinery outage": 60,
-  "smelter shutdown": 60,
-
-  "factory shutdown": 60,
-  "factory fire": 60,
-
-  "pipeline shutdown": 60,
-  "pipeline leak": 60,
+  "factory shutdown": 70,
 
   sanction: 50,
   sanctions: 50,
-  tariff: 40,
-  tariffs: 40,
-
-  "export ban": 60,
-  "import ban": 60,
 
   conflict: 50,
   war: 60,
-  invasion: 60,
-  blockade: 60,
-
-  restructuring: 40,
-  default: 60,
-
-  layoffs: 40,
+  invasion: 70,
 
   cyclone: 60,
   hurricane: 60,
-  typhoon: 60,
   storm: 50,
 
-  flooding: 50,
   flood: 50,
-
   wildfire: 60,
-  bushfire: 60,
 
   earthquake: 70,
-  landslide: 60,
 
-  heatwave: 40,
   drought: 40,
 
-  "bridge collapse": 70,
-
-  "port closure": 60,
-  "airport closure": 60,
-
-  "road closure": 40,
-
-  "network outage": 40
+  "bridge collapse": 80,
+  "port closure": 70
 };
-
-function containsKeyword(text: string, keyword: string) {
-  return text.includes(keyword);
-}
 
 function calculateRiskScore(text: string) {
 
   let score = 0;
-  const lower = text.toLowerCase();
 
   Object.entries(riskKeywords).forEach(([word, value]) => {
-    if (containsKeyword(lower, word)) score += value;
+    if (containsKeyword(text, word)) score += value;
   });
 
-  if (score > 0 && score < 30) score += 10;
+  if (score > 100) score = 100;
 
-  return Math.min(score, 100);
+  return score;
 }
 
 /* ------------------------------------------------ */
-/* SUPPLY CHAIN KEYWORDS + SCORING                  */
+/* SUPPLY CHAIN KEYWORDS                            */
 /* ------------------------------------------------ */
 
 const supplyChainKeywords: Record<string, number> = {
+
   mining: 20,
-  lithium: 20,
-  copper: 20,
-  iron: 15,
-  nickel: 15,
+  lithium: 25,
+  copper: 25,
+  iron: 20,
+  nickel: 20,
+
+  oil: 25,
+  gas: 25,
+  lng: 25,
+  refinery: 25,
+  pipeline: 20,
+
   logistics: 20,
   port: 20,
   shipping: 20,
   freight: 20,
   rail: 15,
-  steel: 15,
+
   manufacturing: 20,
-  energy: 20,
-  refinery: 20,
-  smelter: 20,
-  construction: 15,
+  factory: 20,
+  production: 20,
+
   infrastructure: 15,
-  equipment: 15,
-  machinery: 15,
-  supply: 15,
-  production: 15
+  construction: 15
 };
 
 function calculateSupplyChainScore(text: string) {
 
   let score = 0;
-  const lower = text.toLowerCase();
 
   Object.entries(supplyChainKeywords).forEach(([word, value]) => {
-    if (containsKeyword(lower, word)) score += value;
+    if (containsKeyword(text, word)) score += value;
   });
 
-  return Math.min(score, 100);
+  if (score > 100) score = 100;
+
+  return score;
 }
 
 /* ------------------------------------------------ */
@@ -200,16 +166,15 @@ function calculateSupplyChainScore(text: string) {
 
 const industryDetection: Record<string, string[]> = {
 
-  mining: ["mine", "mining", "lithium", "copper", "nickel", "iron ore", "smelter"],
+  mining: ["mine", "mining", "lithium", "copper", "nickel"],
 
-  energy: ["oil", "gas", "lng", "refinery", "pipeline", "energy"],
+  energy: ["oil", "gas", "lng", "refinery", "pipeline"],
 
-  logistics: ["shipping", "freight", "port", "rail", "cargo", "logistics", "trucking"],
+  logistics: ["shipping", "freight", "port", "rail", "cargo"],
 
-  manufacturing: ["factory", "manufacturing", "production", "plant"],
+  manufacturing: ["factory", "manufacturing", "plant"],
 
-  infrastructure: ["construction", "infrastructure", "bridge", "tunnel"]
-
+  infrastructure: ["construction", "infrastructure", "bridge"]
 };
 
 function detectIndustry(
@@ -217,10 +182,8 @@ function detectIndustry(
   keywords: { industry_id: number; keyword: string }[]
 ) {
 
-  const lower = text.toLowerCase();
-
   const keywordMatch = keywords.find(k =>
-    lower.includes(k.keyword.toLowerCase())
+    text.includes(k.keyword.toLowerCase())
   );
 
   if (keywordMatch) return keywordMatch.industry_id;
@@ -229,7 +192,7 @@ function detectIndustry(
 
     for (const word of words) {
 
-      if (containsKeyword(lower, word)) {
+      if (text.includes(word)) {
 
         const found = keywords.find(k =>
           k.keyword.toLowerCase().includes(industry)
@@ -318,7 +281,8 @@ export async function GET() {
 
             const title = cleanHtml(item.title);
             const description = cleanHtml(item.contentSnippet || item.content);
-            const combined = `${title} ${description}`.toLowerCase();
+
+            const combined = normalizeText(`${title} ${description}`);
 
             const guid = item.guid || item.link;
             if (!guid || !item.pubDate) continue;
@@ -334,6 +298,9 @@ export async function GET() {
             const supplyScore = calculateSupplyChainScore(combined);
 
             const industryId = detectIndustry(combined, keywords || []);
+
+            /* Skip useless news */
+            if (riskScore === 0 && supplyScore === 0) continue;
 
             articles.push({
               industry_id: industryId,
