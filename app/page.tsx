@@ -49,10 +49,14 @@ export default async function Home() {
   /* FALLBACK — if filters remove everything */
   const usableSignals = industrySignals.length > 0 ? industrySignals : signals;
 
-  const highRisk = usableSignals.filter((s:any) => s.risk_score >= 60);
-  const mediumRisk = usableSignals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
-  const normalSignals = usableSignals.filter((s:any) => s.risk_score < 30);
+const highRisk = signals.filter((s:any) => s.risk_score >= 60);
+const mediumRisk = signals.filter((s:any) => s.risk_score >= 30 && s.risk_score < 60);
 
+/* fallback: show latest news even if risk = 0 */
+const normalSignals =
+  signals.filter((s:any) => s.risk_score < 30).length > 0
+    ? signals.filter((s:any) => s.risk_score < 30)
+    : signals;
   /* GLOBAL RISK INDEX */
   const avgRisk =
     usableSignals.length > 0
@@ -269,7 +273,7 @@ export default async function Home() {
                 Industry Signals
               </h3>
 
-              {normalSignals.slice(0,3).map((signal:any) => (
+              {signals.slice(0,3).map((signal:any) => (
 
                 <div
                   key={signal.title}
