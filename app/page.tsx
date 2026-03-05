@@ -2,35 +2,18 @@ export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
 import { getIndustrySignals } from "@/lib/data";
-import { useRouter } from "next/navigation";
 
 /* ---------------- SEARCH COMPONENT ---------------- */
 
 function SearchBar() {
 
-"use client"
-
-const router = useRouter()
-
-function handleSearch(formData: FormData){
-
-const country = formData.get("country")
-const industry = formData.get("industry")
-const capability = formData.get("capability")
-
-const params = new URLSearchParams()
-
-if(country) params.append("country",country.toString())
-if(industry) params.append("industry",industry.toString())
-if(capability) params.append("capability",capability.toString())
-
-router.push(`/search?${params.toString()}`)
-
-}
-
 return (
 
-<form action={handleSearch} className="flex flex-wrap justify-center gap-4">
+<form
+method="GET"
+action="/search"
+className="flex flex-wrap justify-center gap-4"
+>
 
 <select
 name="country"
