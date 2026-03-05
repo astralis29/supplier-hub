@@ -523,7 +523,7 @@ const articleDate = new Date(item.pubDate || Date.now());
            if (riskScore === 0 && supplyScore === 0 && !industryId) continue;
 
             articles.push({
-              industry_id: industryId,
+              industry_id: industryId ?? null,
               rss_source_id: source.id,
               title,
               description,
