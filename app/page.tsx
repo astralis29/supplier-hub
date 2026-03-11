@@ -1,7 +1,25 @@
-export const revalidate = 0;
-export const dynamic = "force-dynamic";
+export const revalidate = 0
+export const dynamic = "force-dynamic"
 
-import { getIndustrySignals } from "@/lib/data";
+/* ---------------- SAMPLE SIGNAL DATA ---------------- */
+
+const signals = [
+{
+title: "Major Port Shutdown in Singapore",
+description: "Container congestion causing global freight delays",
+risk_score: 85
+},
+{
+title: "Copper Mine Strike in Chile",
+description: "Labour dispute impacting global copper supply",
+risk_score: 70
+},
+{
+title: "Semiconductor Plant Expansion",
+description: "New chip fab increasing global production",
+risk_score: 30
+}
+]
 
 /* ---------------- SEARCH COMPONENT ---------------- */
 
@@ -27,7 +45,6 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 <option value="United Kingdom">United Kingdom</option>
 </select>
 
-
 <select
 name="industry"
 className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
@@ -41,7 +58,6 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 <option value="Logistics">Logistics</option>
 </select>
 
-
 <select
 name="capability"
 className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
@@ -53,7 +69,6 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 <option value="Engineering">Engineering</option>
 <option value="Automation">Automation</option>
 </select>
-
 
 <button
 type="submit"
@@ -72,8 +87,6 @@ Search
 
 export default async function Home() {
 
-const signals = await getIndustrySignals() ?? []
-
 /* INDUSTRY FILTER */
 
 const industryTerms = [
@@ -85,29 +98,7 @@ const industryTerms = [
 "graphite","zinc","lead","manganese","uranium","smelter","refinery","ore","metal","metals","commodity",
 "energy","oil","gas","lng","crude","petroleum","refining","pipeline","offshore drilling","drilling",
 "upstream","downstream","opec","power","electricity","power plant","grid","utility","renewable","solar",
-"wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage",
-"manufacturing","factory","industrial","production","plant","assembly","machinery","equipment",
-"fabrication","engineering","tooling","automation","robotics","machining",
-"construction","infrastructure","contractor","megaproject","bridge","tunnel","dam","highway",
-"railway project","port project","airport construction",
-"semiconductor","chip","microchip","processor","gpu","cpu","foundry","fab","silicon","wafer",
-"electronics","hardware","datacenter","server",
-"battery","batteries","gigafactory","lithium battery","ev battery","electric vehicle","charging station",
-"automotive","vehicle","carmaker","automaker","electric car","vehicle manufacturing",
-"aerospace","aircraft","aviation","airline","airport","satellite","rocket","spacecraft",
-"agriculture","farming","crop","grain","wheat","corn","soybean","fertiliser","fertilizer",
-"food production","livestock","dairy",
-"chemical","chemicals","petrochemical","ammonia","plastics","polymer","resin","materials",
-"telecom","telecommunications","network","broadband","fiber","5g","data infrastructure",
-"pharmaceutical","pharma","biotech","vaccine","drug","medicine","laboratory",
-"strike","walkout","shutdown","closure","halt","suspension","bankruptcy","collapse",
-"industrial action","labour dispute","plant shutdown","factory shutdown","mine shutdown",
-"refinery outage","smelter shutdown",
-"congestion","delay","bottleneck","shortage","shipping disruption","freight disruption",
-"port congestion","canal blockage","transport disruption",
-"flood","storm","cyclone","hurricane","typhoon","wildfire","bushfire","earthquake",
-"drought","landslide","extreme weather",
-"war","conflict","invasion","sanctions","embargo","tariff","trade war","blockade"
+"wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage"
 ]
 
 const industrySignals = signals.filter((s:any)=>{
@@ -145,11 +136,15 @@ return (
 {/* HERO */}
 
 <section
-className="relative min-h-[90vh] flex items-center justify-center text-center bg-cover bg-center"
-style={{ backgroundImage: "url('/forest-bg.jpg')" }}
+className="relative h-screen flex items-center justify-center text-center"
+style={{
+backgroundImage: "url('/forest-bg.jpg')",
+backgroundSize: "cover",
+backgroundPosition: "center"
+}}
 >
 
-<div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/75 to-black/80"></div>
+<div className="absolute inset-0 bg-black/60"></div>
 
 <div className="relative z-10 w-full max-w-5xl px-6">
 
@@ -157,17 +152,15 @@ style={{ backgroundImage: "url('/forest-bg.jpg')" }}
 Discover Verified Industrial Suppliers
 </h1>
 
-<p className="text-lg text-gray-300 mb-10">
+<p className="text-lg text-gray-200 mb-10">
 AI-powered supplier discovery with real-time supply chain intelligence.
 </p>
-
-{/* SEARCH BAR */}
 
 <SearchBar/>
 
 </div>
-</section>
 
+</section>
 
 {/* ALERT BAR */}
 
@@ -177,7 +170,7 @@ AI-powered supplier discovery with real-time supply chain intelligence.
 
 <div className="max-w-7xl mx-auto">
 
-<div className="flex gap-10 animate-marquee whitespace-nowrap">
+<div className="flex gap-10 whitespace-nowrap">
 
 {highRisk.slice(0,10).map((alert:any,i:number)=>(
 <span key={i} className="font-medium">
@@ -192,7 +185,6 @@ AI-powered supplier discovery with real-time supply chain intelligence.
 </section>
 
 )}
-
 
 {/* GLOBAL INDEX */}
 
@@ -224,7 +216,6 @@ Global Supply Chain Risk Index
 
 </section>
 
-
 {/* DASHBOARD */}
 
 <section className="py-12 bg-gray-50">
@@ -250,7 +241,6 @@ HIGH RISK · Score {signal.risk_score}
 
 </div>
 
-
 <div>
 
 <h3 className="text-orange-500 font-semibold mb-4">
@@ -269,7 +259,6 @@ MEDIUM RISK · Score {signal.risk_score}
 ))}
 
 </div>
-
 
 <div>
 
@@ -293,7 +282,6 @@ INDUSTRY SIGNAL
 </div>
 
 </section>
-
 
 <footer className="py-12 bg-black text-gray-400 text-center text-sm">
 © {new Date().getFullYear()} What's the Supplier?

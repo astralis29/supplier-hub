@@ -1,62 +1,38 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: {
-    default: "What's the Supplier?",
-    template: "%s | What's the Supplier?",
-  },
-  description:
-    "Discover verified industrial suppliers by country, industry and capability. Powered by ABR and intelligent domain analysis.",
-};
+export const metadata = {
+  title: "What's the Supplier?",
+  description: "AI-powered industrial supplier discovery"
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <div className="min-h-screen flex flex-col">
+      <body>
 
-          {/* Navigation */}
-<nav className="bg-black text-white py-4">
-  <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
+        {/* NAVBAR */}
+        <header className="bg-black text-white py-4">
+          <div className="max-w-7xl mx-auto flex justify-between items-center px-6">
+            <div className="font-semibold">
+              What's the Supplier?
+            </div>
 
-    {/* Logo */}
-    <div className="font-bold text-lg whitespace-nowrap">
-      What's the Supplier?
-    </div>
+            <nav className="flex gap-6 text-sm">
+              <a href="/">Home</a>
+              <a href="/search">Search</a>
+              <a href="/suppliers">Suppliers</a>
+            </nav>
+          </div>
+        </header>
 
-    {/* Desktop Menu */}
-    <div className="hidden md:flex space-x-8 text-sm">
-      <a href="/" className="hover:text-gray-300 transition">Home</a>
-      <a href="/search" className="hover:text-gray-300 transition">Search</a>
-      <a href="/suppliers" className="hover:text-gray-300 transition">Suppliers</a>
-    </div>
+        {/* PAGE CONTENT */}
+        {children}
 
-  </div>
-</nav>
-
-          {/* Page Content */}
-          <main className="flex-1">
-            {children}
-          </main>
-
-        </div>
       </body>
     </html>
-  );
+  )
 }
