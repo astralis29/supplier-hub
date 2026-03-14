@@ -13,24 +13,49 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const q = searchParams.get("q") || ""
 
+    // If no search query, return default suppliers
+    if (!q) {
+
+      const result = await pool.query(`
+        SELECT
+          abn,
+          abn_name,
+          website,
+          domain,
+          website_name,
+          keywords,
+          gst_registered,
+          abn_status
+        FROM supplier_profiles
+        ORDER BY abn_name
+        LIMIT 100
+      `)
+
+      return Response.json(result.rows)
+    }
+
+    // If search query exists
+    const search = `%${q}%`
+
     const result = await pool.query(
       `
       SELECT
-  abn,
-  abn_name,
-  website,
-  domain,
-  website_name,
-  keywords,
-  gst_registered,
-  abn_status
+        abn,
+        abn_name,
+        website,
+        domain,
+        website_name,
+        keywords,
+        gst_registered,
+        abn_status
       FROM supplier_profiles
       WHERE
         abn_name ILIKE $1
         OR array_to_string(keywords,' ') ILIKE $1
-      LIMIT 10000000
+      ORDER BY abn_name
+      LIMIT 1000
       `,
-      [`%${q}%`]
+      [search]
     )
 
     return Response.json(result.rows)
