@@ -28,7 +28,7 @@ export async function GET(req: Request) {
           abn_status
         FROM supplier_profiles
         ORDER BY abn_name
-        LIMIT 100
+        LIMIT 5000000
       `)
 
       return Response.json(result.rows)
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
         abn_name ILIKE $1
         OR array_to_string(keywords,' ') ILIKE $1
       ORDER BY abn_name
-      LIMIT 1000
+      LIMIT 5000000
       `,
       [search]
     )
