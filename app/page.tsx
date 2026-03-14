@@ -87,7 +87,7 @@ Search
 
 export default async function Home() {
 
-/* INDUSTRY FILTER */
+/* INDUSTRY FILTER TERMS */
 
 const industryTerms = [
 "freight","logistics","shipping","cargo","container","port","harbour","dock","terminal","supply chain",
@@ -101,15 +101,19 @@ const industryTerms = [
 "wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage"
 ]
 
+/* FILTER SIGNALS BY INDUSTRY TERMS */
+
 const industrySignals = signals.filter((s:any)=>{
 
 const text = `${s.title ?? ""} ${s.description ?? ""}`.toLowerCase()
 
-return industryTerms.some(term=>text.includes(term))
+return industryTerms.some(term => text.includes(term))
 
 })
 
 const usableSignals = industrySignals.length > 0 ? industrySignals : signals
+
+/* RISK CALCULATIONS */
 
 const highRisk = usableSignals
 .filter((s:any)=>s.risk_score >= 80)

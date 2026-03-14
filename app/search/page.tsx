@@ -5,22 +5,35 @@ import { useEffect, useState } from "react";
 export default function SearchPage() {
 
   const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [country, setCountry] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [capability, setCapability] = useState("");
+  const [query, setQuery] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchSuppliers();
-  }, [country, industry, capability]);
+
+    const delay = setTimeout(() => {
+      fetchSuppliers();
+    }, 300);
+
+    return () => clearTimeout(delay);
+
+  }, [query, stateFilter]);
 
   async function fetchSuppliers() {
 
-    const searchTerm = capability || industry || "";
+    setLoading(true);
 
-    const res = await fetch(`/api/search?q=${searchTerm}`);
+    const params = new URLSearchParams();
+
+    if (query) params.append("q", query);
+    if (stateFilter) params.append("state", stateFilter);
+
+    const res = await fetch(`/api/search?${params.toString()}`);
     const data = await res.json();
 
-    setSuppliers(Array.isArray(data) ? data : [])
+    setSuppliers(Array.isArray(data) ? data : []);
+
+    setLoading(false);
 
   }
 
@@ -36,45 +49,53 @@ export default function SearchPage() {
 
       <div className="flex gap-4 flex-wrap">
 
-        <select
-          className="border p-2 rounded"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-        >
-          <option value="">Country</option>
-          <option value="Australia">Australia</option>
-        </select>
-
-        <select
-          className="border p-2 rounded"
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-        >
-          <option value="">Industry</option>
-          <option value="Manufacturing">Manufacturing</option>
-          <option value="Defence">Defence</option>
-          <option value="Mining">Mining</option>
-          <option value="Energy">Energy</option>
-          <option value="Engineering">Engineering</option>
-        </select>
+        {/* Search */}
 
         <input
-          className="border p-2 rounded"
-          placeholder="Capability (eg Steel Fabrication)"
-          value={capability}
-          onChange={(e) => setCapability(e.target.value)}
+          className="border p-2 rounded min-w-[240px]"
+          placeholder="Search company name..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
 
+        {/* State */}
+
+        <select
+          className="border p-2 rounded"
+          value={stateFilter}
+          onChange={(e) => setStateFilter(e.target.value)}
+        >
+
+          <option value="">State</option>
+          <option value="NSW">NSW</option>
+          <option value="VIC">VIC</option>
+          <option value="QLD">QLD</option>
+          <option value="WA">WA</option>
+          <option value="SA">SA</option>
+          <option value="TAS">TAS</option>
+          <option value="NT">NT</option>
+          <option value="ACT">ACT</option>
+
+        </select>
+
       </div>
+
+      {/* Loading */}
+
+      {loading && (
+        <div className="text-gray-500">
+          Searching suppliers...
+        </div>
+      )}
 
       {/* Results */}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        {suppliers.map((supplier: any, i: number) => (
+        {suppliers.map((supplier: any) => (
 
           <div
-            key={i}
+            key={supplier.abn}
             className="border rounded-xl p-6 bg-white shadow hover:shadow-md transition"
           >
 
@@ -86,13 +107,17 @@ export default function SearchPage() {
               {supplier.state} {supplier.postcode}
             </div>
 
+            <div className="text-xs text-gray-400 mt-2">
+              ABN: {supplier.abn}
+            </div>
+
           </div>
 
         ))}
 
       </div>
 
-      {suppliers.length === 0 && (
+      {!loading && suppliers.length === 0 && (
 
         <div className="text-gray-500">
           No suppliers found

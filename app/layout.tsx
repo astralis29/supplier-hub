@@ -2,7 +2,12 @@ import "./globals.css"
 
 export const metadata = {
   title: "What's the Supplier?",
-  description: "AI-powered industrial supplier discovery"
+  description: "AI-powered industrial supplier discovery",
+  icons: {
+    icon: "/favicon.ico",        // browser tab icon
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico"
+  }
 }
 
 export default function RootLayout({
