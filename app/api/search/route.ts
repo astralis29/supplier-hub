@@ -8,26 +8,32 @@ const pool = new Pool({
 })
 
 export async function GET(req: Request) {
+  try {
 
-  const { searchParams } = new URL(req.url)
-  const q = searchParams.get("q") || ""
+    const { searchParams } = new URL(req.url)
+    const q = searchParams.get("q") || ""
 
-  const result = await pool.query(
-    `
-    SELECT
-      abn,
-      abn_name,
-      website,
-      domain,
-      keywords
-    FROM supplier_profiles
-    WHERE
-      abn_name ILIKE $1
-      OR array_to_string(keywords, ' ') ILIKE $1
-    LIMIT 20
-    `,
-    [`%${q}%`]
-  )
+    const result = await pool.query(
+      `
+      SELECT
+        abn,
+        abn_name,
+        website,
+        domain,
+        keywords
+      FROM supplier_profiles
+      WHERE
+        abn_name ILIKE $1
+        OR array_to_string(keywords,' ') ILIKE $1
+      LIMIT 20
+      `,
+      [`%${q}%`]
+    )
 
-  return Response.json(result.rows)
+    return Response.json(result.rows)
+
+  } catch (err) {
+    console.error(err)
+    return Response.json({ error: String(err) }, { status: 500 })
+  }
 }
