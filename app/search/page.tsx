@@ -39,18 +39,28 @@ export default function SearchPage() {
 
   return (
 
-    <main className="max-w-7xl mx-auto p-8 space-y-10">
+    <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
 
-      <h1 className="text-4xl font-bold">
-        Discover Industrial Suppliers
-      </h1>
+      {/* Hero */}
+
+      <div className="space-y-4">
+
+        <h1 className="text-4xl font-bold">
+          Discover Industrial Suppliers
+        </h1>
+
+        <p className="text-gray-500">
+          Search verified Australian businesses by company name, capability, or industry.
+        </p>
+
+      </div>
 
       {/* Filters */}
 
       <div className="flex gap-4 flex-wrap items-center">
 
         <input
-          className="border p-3 rounded-lg min-w-[260px]"
+          className="border p-3 rounded-lg min-w-[260px] focus:outline-none focus:ring-2 focus:ring-blue-400"
           placeholder="Search suppliers, capabilities, industries..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -74,14 +84,24 @@ export default function SearchPage() {
 
         </select>
 
+        <div className="text-sm text-gray-500">
+          {suppliers.length} suppliers found
+        </div>
+
       </div>
 
       {/* Loading */}
 
       {loading && (
-        <div className="text-gray-500">
+
+        <div className="flex items-center gap-2 text-gray-500">
+
+          <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+
           Searching suppliers...
+
         </div>
+
       )}
 
       {/* Results */}
@@ -92,39 +112,57 @@ export default function SearchPage() {
 
           <div
             key={supplier.abn}
-            className="border rounded-xl p-6 bg-white shadow hover:shadow-lg transition space-y-4"
+            className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-xl transition duration-200 space-y-4"
           >
 
             {/* Logo + Name */}
 
             <div className="flex items-center gap-3">
 
-              {supplier.domain && (
+              {supplier.domain ? (
+
                 <img
                   src={`https://logo.clearbit.com/${supplier.domain}`}
                   className="w-10 h-10 rounded"
+                  onError={(e:any)=> e.currentTarget.style.display="none"}
                 />
+
+              ) : (
+
+                <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-xs">
+                  🏭
+                </div>
+
               )}
 
-              <div className="text-lg font-semibold">
-                {supplier.abn_name || supplier.name}
+              <div>
+
+                <div className="font-bold text-gray-900">
+                  {supplier.abn_name || supplier.name}
+                </div>
+
+                {(supplier.state || supplier.postcode) && (
+
+                  <div className="text-sm text-gray-500">
+
+                    {supplier.state} {supplier.postcode}
+
+                  </div>
+
+                )}
+
               </div>
 
             </div>
 
-            {/* Location */}
-
-            {(supplier.state || supplier.postcode) && (
-              <div className="text-sm text-gray-500">
-                {supplier.state} {supplier.postcode}
-              </div>
-            )}
-
             {/* Website */}
 
             {supplier.website && (
+
               <div className="text-sm">
+
                 🌐{" "}
+
                 <a
                   href={supplier.website}
                   target="_blank"
@@ -132,49 +170,78 @@ export default function SearchPage() {
                 >
                   {supplier.domain || supplier.website}
                 </a>
+
               </div>
+
             )}
 
             {/* Capabilities */}
 
-            {supplier.keywords && (
-              <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
 
-                {supplier.keywords.slice(0,4).map((k:any) => (
+              {supplier.keywords?.slice(0,4).map((k:any) => (
 
-                  <span
-                    key={k}
-                    className="text-xs bg-gray-100 px-2 py-1 rounded"
-                  >
-                    {k}
-                  </span>
+                <span
+                  key={k}
+                  className="text-xs bg-gray-100 px-2 py-1 rounded"
+                >
+                  {k}
+                </span>
 
-                ))}
+              ))}
 
-              </div>
-            )}
+              {!supplier.keywords && (
 
-            {/* Business info */}
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  Industrial Supplier
+                </span>
 
-            <div className="text-xs text-gray-500 space-y-1">
-
-              <div>
-                ABN: {supplier.abn}
-              </div>
-
-              {supplier.abn_status && (
-                <div>
-                  ABN Status: {supplier.abn_status}
-                </div>
-              )}
-
-              {supplier.gst_registered && (
-                <div>
-                  GST Registered: {supplier.gst_registered ? "Yes" : "No"}
-                </div>
               )}
 
             </div>
+
+            {/* Business Info */}
+
+            <div className="text-xs text-gray-500 space-y-1 border-t pt-3">
+
+              <div>
+                <strong>ABN:</strong> {supplier.abn}
+              </div>
+
+              {supplier.abn_status && (
+
+                <div>
+                  <strong>ABN Status:</strong> {supplier.abn_status}
+                </div>
+
+              )}
+
+              {supplier.gst_registered !== undefined && (
+
+                <div>
+                  <strong>GST Registered:</strong>{" "}
+                  {supplier.gst_registered ? "Yes" : "No"}
+                </div>
+
+              )}
+
+            </div>
+
+            {/* CTA */}
+
+            {supplier.website && (
+
+              <a
+                href={supplier.website}
+                target="_blank"
+                className="block text-center text-sm border rounded-lg py-2 hover:bg-gray-100 transition"
+              >
+
+                Visit Website
+
+              </a>
+
+            )}
 
           </div>
 
