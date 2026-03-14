@@ -39,34 +39,30 @@ export default function SearchPage() {
 
   return (
 
-    <main className="max-w-6xl mx-auto p-8 space-y-8">
+    <main className="max-w-7xl mx-auto p-8 space-y-10">
 
-      <h1 className="text-3xl font-bold">
-        Search Suppliers
+      <h1 className="text-4xl font-bold">
+        Discover Industrial Suppliers
       </h1>
 
       {/* Filters */}
 
-      <div className="flex gap-4 flex-wrap">
-
-        {/* Search */}
+      <div className="flex gap-4 flex-wrap items-center">
 
         <input
-          className="border p-2 rounded min-w-[240px]"
-          placeholder="Search company name..."
+          className="border p-3 rounded-lg min-w-[260px]"
+          placeholder="Search suppliers, capabilities, industries..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
 
-        {/* State */}
-
         <select
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg"
           value={stateFilter}
           onChange={(e) => setStateFilter(e.target.value)}
         >
 
-          <option value="">State</option>
+          <option value="">All States</option>
           <option value="NSW">NSW</option>
           <option value="VIC">VIC</option>
           <option value="QLD">QLD</option>
@@ -96,19 +92,88 @@ export default function SearchPage() {
 
           <div
             key={supplier.abn}
-            className="border rounded-xl p-6 bg-white shadow hover:shadow-md transition"
+            className="border rounded-xl p-6 bg-white shadow hover:shadow-lg transition space-y-4"
           >
 
-            <div className="text-lg font-semibold">
-              {supplier.name}
+            {/* Logo + Name */}
+
+            <div className="flex items-center gap-3">
+
+              {supplier.domain && (
+                <img
+                  src={`https://logo.clearbit.com/${supplier.domain}`}
+                  className="w-10 h-10 rounded"
+                />
+              )}
+
+              <div className="text-lg font-semibold">
+                {supplier.abn_name || supplier.name}
+              </div>
+
             </div>
 
-            <div className="text-gray-500 mt-2">
-              {supplier.state} {supplier.postcode}
-            </div>
+            {/* Location */}
 
-            <div className="text-xs text-gray-400 mt-2">
-              ABN: {supplier.abn}
+            {(supplier.state || supplier.postcode) && (
+              <div className="text-sm text-gray-500">
+                {supplier.state} {supplier.postcode}
+              </div>
+            )}
+
+            {/* Website */}
+
+            {supplier.website && (
+              <div className="text-sm">
+                🌐{" "}
+                <a
+                  href={supplier.website}
+                  target="_blank"
+                  className="text-blue-600 hover:underline"
+                >
+                  {supplier.domain || supplier.website}
+                </a>
+              </div>
+            )}
+
+            {/* Capabilities */}
+
+            {supplier.keywords && (
+              <div className="flex flex-wrap gap-2">
+
+                {supplier.keywords.slice(0,4).map((k:any) => (
+
+                  <span
+                    key={k}
+                    className="text-xs bg-gray-100 px-2 py-1 rounded"
+                  >
+                    {k}
+                  </span>
+
+                ))}
+
+              </div>
+            )}
+
+            {/* Business info */}
+
+            <div className="text-xs text-gray-500 space-y-1">
+
+              <div>
+                ABN: {supplier.abn}
+              </div>
+
+              {supplier.abn_status && (
+                <div>
+                  ABN Status: {supplier.abn_status}
+                </div>
+              )}
+
+              {supplier.gst_registered && (
+                <div>
+                  GST Registered: {supplier.gst_registered ? "Yes" : "No"}
+                </div>
+              )}
+
             </div>
 
           </div>
