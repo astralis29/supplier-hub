@@ -28,7 +28,7 @@ export async function GET(req: Request) {
       WHERE
         abn_name ILIKE $1
         OR array_to_string(keywords,' ') ILIKE $1
-      LIMIT 20
+      LIMIT 10000000
       `,
       [`%${q}%`]
     )
