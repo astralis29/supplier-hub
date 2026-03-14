@@ -16,11 +16,14 @@ export async function GET(req: Request) {
     const result = await pool.query(
       `
       SELECT
-        abn,
-        abn_name,
-        website,
-        domain,
-        keywords
+  abn,
+  abn_name,
+  website,
+  domain,
+  website_name,
+  keywords,
+  gst_registered,
+  abn_status
       FROM supplier_profiles
       WHERE
         abn_name ILIKE $1
