@@ -125,51 +125,25 @@ const capabilities = capabilityResult.rows.map((r:any) =>
     .join(" ")
 )
 
-/* INDUSTRY FILTER TERMS */
+/* ---------------- RISK KEYWORDS ---------------- */
 
-const industryTerms = [
-"freight","logistics","shipping","cargo","container","port","harbour","dock","terminal","supply chain",
-"trade","transport","rail","railway","rail freight","trucking","truck","haulage","air cargo","air freight",
-"shipping lane","canal","tanker","bulk carrier","cargo ship","container ship","freight route","transport corridor",
-"mining","mine","mineral","minerals","lithium","copper","iron ore","nickel","cobalt","bauxite","aluminium",
-"steel","coal","metallurgical coal","gold","silver","platinum","palladium","rare earth","rare earths",
-"graphite","zinc","lead","manganese","uranium","smelter","refinery","ore","metal","metals","commodity",
-"energy","oil","gas","lng","crude","petroleum","refining","pipeline","offshore drilling","drilling",
-"upstream","downstream","opec","power","electricity","power plant","grid","utility","renewable","solar",
-"wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage"
+const riskKeywords = [
+{ word:"strike", score:30 },
+{ word:"shutdown", score:35 },
+{ word:"shortage", score:25 },
+{ word:"sanction", score:25 },
+{ word:"delay", score:20 },
+{ word:"disruption", score:30 },
+{ word:"congestion", score:20 },
+{ word:"blockade", score:30 },
+{ word:"conflict", score:35 },
+{ word:"attack", score:35 },
+
+{ word:"expansion", score:-10 },
+{ word:"investment", score:-5 },
+{ word:"growth", score:-5 },
+{ word:"increase", score:-5 }
 ]
-
-/* FILTER SIGNALS */
-
-const industrySignals = signals.filter((s:any)=>{
-
-const text = `${s.title ?? ""} ${s.description ?? ""}`.toLowerCase()
-
-return industryTerms.some(term => text.includes(term))
-
-})
-
-const usableSignals = industrySignals.length > 0 ? industrySignals : signals
-
-/* RISK CALCULATIONS */
-
-const highRisk = usableSignals
-.filter((s:any)=>s.risk_score >= 80)
-.sort((a:any,b:any)=>b.risk_score-a.risk_score)
-
-const mediumRisk = usableSignals
-.filter((s:any)=>s.risk_score >= 50 && s.risk_score < 80)
-.sort((a:any,b:any)=>b.risk_score-a.risk_score)
-
-const relevantSignals = usableSignals.filter((s:any)=>s.risk_score >= 20)
-
-const avgRisk =
-relevantSignals.length > 0
-? Math.round(
-relevantSignals.reduce((acc:any,s:any)=>acc+(s.risk_score||0),0) /
-relevantSignals.length
-)
-: 0
 
 /* ---------------- RSS SUPPLY CHAIN NEWS ---------------- */
 
@@ -190,11 +164,28 @@ try{
 const feed = await parser.parseURL(feedUrl)
 
 news.push(
-...feed.items.slice(0,3).map((item:any)=>({
+...feed.items.slice(0,3).map((item:any)=>{
+
+const text = `${item.title ?? ""} ${item.contentSnippet ?? ""}`.toLowerCase()
+
+let risk = 0
+
+for(const k of riskKeywords){
+if(text.includes(k.word)){
+risk += k.score
+}
+}
+
+risk = Math.max(0,Math.min(100,risk))
+
+return{
 title:item.title,
 link:item.link,
-pubDate:item.pubDate
-}))
+pubDate:item.pubDate,
+risk_score:risk
+}
+
+})
 )
 
 }catch(err){
@@ -203,11 +194,40 @@ console.log("RSS error:",feedUrl)
 
 }
 
+/* SORT NEWS */
+
 news = news
-.sort((a,b)=>
-new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-)
+.sort((a,b)=>b.risk_score-a.risk_score)
 .slice(0,6)
+
+/* ---------------- GLOBAL RISK CALCULATION ---------------- */
+
+const riskValues = news.map(n=>n.risk_score)
+
+const globalRisk =
+riskValues.length > 0
+? Math.round(riskValues.reduce((a,b)=>a+b,0) / riskValues.length)
+: 0
+
+let riskLabel = "LOW"
+
+if(globalRisk >= 70) riskLabel = "HIGH"
+else if(globalRisk >= 40) riskLabel = "MEDIUM"
+
+/* RISK COLOUR */
+
+let riskColor = "text-green-600"
+
+if(globalRisk >= 70) riskColor = "text-red-600"
+else if(globalRisk >= 40) riskColor = "text-orange-500"
+
+/* RISK BAR WIDTH */
+
+const riskWidth = `${globalRisk}%`
+
+/* TOP RISK EVENT */
+
+const topRisk = news[0]
 
 /* ---------------- PAGE ---------------- */
 
@@ -247,6 +267,59 @@ capabilities={capabilities}
 
 </section>
 
+{/* GLOBAL SUPPLY CHAIN RISK */}
+
+<section className="max-w-4xl mx-auto py-12 text-center">
+
+<h2 className="text-2xl font-bold mb-6">
+Global Supply Chain Risk
+</h2>
+
+<div className={`text-5xl font-bold mb-4 ${riskColor}`}>
+{globalRisk}
+</div>
+
+{/* Risk Bar */}
+
+<div className="w-full max-w-md mx-auto h-4 bg-gray-200 rounded-full overflow-hidden mb-4">
+
+<div
+className={`h-full ${riskColor.replace("text","bg")}`}
+style={{ width: riskWidth }}
+></div>
+
+</div>
+
+<p className={`text-lg font-semibold ${riskColor}`}>
+Risk Level: {riskLabel}
+</p>
+
+{/* TOP RISK EVENT */}
+
+{topRisk && (
+
+<div className="mt-6">
+
+<p className="text-sm text-gray-500 mb-1">
+Top Risk Event
+</p>
+
+<a
+href={topRisk.link}
+target="_blank"
+className="font-semibold hover:underline"
+>
+
+{topRisk.title}
+
+</a>
+
+</div>
+
+)}
+
+</section>
+
 {/* SUPPLY CHAIN INTELLIGENCE */}
 
 <section className="max-w-6xl mx-auto py-16 px-6">
@@ -273,6 +346,10 @@ className="p-5 bg-white rounded-lg shadow hover:shadow-lg transition"
 <h3 className="font-semibold text-lg text-gray-900">
 {item.title}
 </h3>
+
+<p className="text-sm mt-2 text-gray-500">
+Risk Score: {item.risk_score}
+</p>
 
 </a>
 
