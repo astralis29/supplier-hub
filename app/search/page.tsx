@@ -45,6 +45,14 @@ function SearchContent(){
 
   }
 
+  // Convert capability text to Title Case
+  function toTitleCase(str:string){
+    if(!str) return ""
+    return str
+      .toLowerCase()
+      .replace(/\b\w/g,(l)=>l.toUpperCase())
+  }
+
   return (
 
     <main className="max-w-7xl mx-auto p-8 space-y-8">
@@ -115,14 +123,30 @@ className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 tr
 
 <div className="col-span-1">
 
+<div className="w-10 h-10 relative">
+
+{/* Logo image */}
+
 {supplier.domain && (
 
 <img
 src={`https://logo.clearbit.com/${supplier.domain}`}
-className="w-10 h-10 rounded border"
+className="w-10 h-10 rounded border absolute top-0 left-0 object-contain"
+onError={(e)=>{
+  const target = e.target as HTMLImageElement
+  target.style.display = "none"
+}}
 />
 
 )}
+
+{/* Fallback letter */}
+
+<div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded border text-sm font-semibold">
+{supplier.abn_name?.charAt(0)}
+</div>
+
+</div>
 
 </div>
 
@@ -156,7 +180,7 @@ ABN: {supplier.abn}
 key={c}
 className="text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded"
 >
-{c}
+{toTitleCase(c)}
 </span>
 
 ))}
