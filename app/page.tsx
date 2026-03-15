@@ -2,6 +2,7 @@ export const revalidate = 0
 export const dynamic = "force-dynamic"
 
 import { Pool } from "pg"
+import Parser from "rss-parser"
 
 const pool = new Pool({
 connectionString: process.env.DATABASE_URL,
@@ -54,9 +55,11 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 <option value="">Country</option>
 
 {countries.map((c)=>(
+
 <option key={c} value={c}>
 {c}
 </option>
+
 ))}
 
 </select>
@@ -69,9 +72,13 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[260px]"
 />
 
 <datalist id="capabilities">
+
 {capabilities.map((c)=>(
+
 <option key={c} value={c}/>
+
 ))}
+
 </datalist>
 
 <button
@@ -132,7 +139,7 @@ const industryTerms = [
 "wind","windfarm","hydrogen","nuclear","reactor","biofuel","energy storage"
 ]
 
-/* FILTER SIGNALS BY INDUSTRY TERMS */
+/* FILTER SIGNALS */
 
 const industrySignals = signals.filter((s:any)=>{
 
@@ -163,6 +170,46 @@ relevantSignals.reduce((acc:any,s:any)=>acc+(s.risk_score||0),0) /
 relevantSignals.length
 )
 : 0
+
+/* ---------------- RSS SUPPLY CHAIN NEWS ---------------- */
+
+const parser = new Parser()
+
+const feeds = [
+"https://www.supplychaindive.com/feeds/news/",
+"https://www.freightwaves.com/feed",
+"https://www.joc.com/rss.xml"
+]
+
+let news:any[] = []
+
+for (const feedUrl of feeds) {
+
+try{
+
+const feed = await parser.parseURL(feedUrl)
+
+news.push(
+...feed.items.slice(0,3).map((item:any)=>({
+title:item.title,
+link:item.link,
+pubDate:item.pubDate
+}))
+)
+
+}catch(err){
+console.log("RSS error:",feedUrl)
+}
+
+}
+
+news = news
+.sort((a,b)=>
+new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+)
+.slice(0,6)
+
+/* ---------------- PAGE ---------------- */
 
 return (
 
@@ -195,6 +242,41 @@ AI-powered supplier discovery with real-time supply chain intelligence.
 countries={countries}
 capabilities={capabilities}
 />
+
+</div>
+
+</section>
+
+{/* SUPPLY CHAIN INTELLIGENCE */}
+
+<section className="max-w-6xl mx-auto py-16 px-6">
+
+<h2 className="text-2xl font-bold mb-8 text-center">
+Live Supply Chain Intelligence
+</h2>
+
+<div className="grid md:grid-cols-2 gap-6">
+
+{news.map((item,i)=>(
+
+<a
+key={i}
+href={item.link}
+target="_blank"
+className="p-5 bg-white rounded-lg shadow hover:shadow-lg transition"
+>
+
+<p className="text-xs text-gray-500 mb-2">
+{new Date(item.pubDate).toLocaleDateString()}
+</p>
+
+<h3 className="font-semibold text-lg text-gray-900">
+{item.title}
+</h3>
+
+</a>
+
+))}
 
 </div>
 
