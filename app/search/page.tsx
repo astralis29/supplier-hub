@@ -173,19 +173,44 @@ function SearchContent(){
 
     {/* Business Info */}
 
-    <div className="border-t mt-4 pt-4 flex flex-wrap gap-6 text-sm text-gray-500">
+    <div className="border-t mt-4 pt-4 flex flex-wrap gap-6 text-sm">
 
-      <div>
+      <div className="text-gray-600">
         ABN: {supplier.abn}
       </div>
 
-      <div>
-        {supplier.abn_status === "Active" ? "✔ Active ABN" : "ABN Inactive"}
-      </div>
+      {/* ABN STATUS */}
 
-      <div>
-        {supplier.gst_registered ? "✔ GST Registered" : "GST Not Registered"}
-      </div>
+      {supplier.abn_status === "ACT" ? (
+
+        <div className="flex items-center gap-1 text-green-600 font-medium">
+          ✔ ABN Active
+        </div>
+
+      ) : (
+
+        <div className="flex items-center gap-1 text-red-600 font-medium">
+          ✖ ABN Inactive
+        </div>
+
+      )}
+
+
+      {/* GST STATUS */}
+
+      {supplier.gst_registered ? (
+
+        <div className="flex items-center gap-1 text-green-600">
+          ✔ GST Registered
+        </div>
+
+      ) : (
+
+        <div className="flex items-center gap-1 text-red-500">
+          ✖ GST Not Registered
+        </div>
+
+      )}
 
     </div>
 
