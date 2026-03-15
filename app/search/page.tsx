@@ -71,20 +71,107 @@ function SearchContent(){
 
       <div className="space-y-6">
 
-        {suppliers.map((supplier:any)=>(
+{suppliers.map((supplier:any) => (
 
-          <div
-            key={supplier.abn}
-            className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition"
+  <div
+    key={supplier.abn}
+    className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition"
+  >
+
+    <div className="flex justify-between items-start">
+
+      <div className="space-y-2">
+
+        <div className="text-xl font-semibold">
+          {supplier.abn_name}
+        </div>
+
+        <div className="text-gray-500 text-sm">
+          {supplier.state} {supplier.postcode}
+        </div>
+
+        {supplier.website && (
+          <a
+            href={supplier.website}
+            target="_blank"
+            className="text-blue-600 text-sm hover:underline"
           >
+            🌐 {supplier.website_name || supplier.domain}
+          </a>
+        )}
 
-            <div className="text-xl font-semibold">
-              {supplier.abn_name}
-            </div>
+      </div>
 
-          </div>
+      {supplier.domain && (
+        <img
+          src={`https://logo.clearbit.com/${supplier.domain}`}
+          className="w-12 h-12 rounded"
+        />
+      )}
 
-        ))}
+    </div>
+
+    <div className="border-t mt-4 pt-4">
+
+      {supplier.capabilities?.length > 0 && (
+
+        <div className="flex flex-wrap gap-2 mb-2">
+
+          {supplier.capabilities.slice(0,6).map((c:any) => (
+
+            <span
+              key={c}
+              className="text-xs bg-gray-100 px-2 py-1 rounded"
+            >
+              {c}
+            </span>
+
+          ))}
+
+        </div>
+
+      )}
+
+      {supplier.keywords?.length > 0 && (
+
+        <div className="flex flex-wrap gap-2">
+
+          {supplier.keywords.slice(0,4).map((k:any) => (
+
+            <span
+              key={k}
+              className="text-xs bg-blue-50 px-2 py-1 rounded"
+            >
+              {k}
+            </span>
+
+          ))}
+
+        </div>
+
+      )}
+
+    </div>
+
+    <div className="border-t mt-4 pt-4 text-sm text-gray-500">
+
+      <div>
+        ABN: {supplier.abn}
+      </div>
+
+      <div>
+        ABN Status: {supplier.abn_status}
+      </div>
+
+      <div>
+        GST Registered: {supplier.gst_registered ? "Yes" : "No"}
+      </div>
+
+    </div>
+
+  </div>
+
+))}
 
       </div>
 
