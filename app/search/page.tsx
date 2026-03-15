@@ -1,12 +1,18 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 export default function SearchPage() {
+
+  const searchParams = useSearchParams()
 
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(false)
+
+  const country = searchParams.get("country")
+  const capability = searchParams.get("capability")
 
   useEffect(() => {
 
@@ -16,7 +22,8 @@ export default function SearchPage() {
 
     return () => clearTimeout(delay)
 
-  }, [query])
+  }, [query, country, capability])
+
 
   async function fetchSuppliers() {
 
@@ -25,6 +32,8 @@ export default function SearchPage() {
     const params = new URLSearchParams()
 
     if (query) params.append("q", query)
+    if (country) params.append("country", country)
+    if (capability) params.append("capability", capability)
 
     const res = await fetch(`/api/search?${params}`)
     const data = await res.json()
@@ -32,6 +41,7 @@ export default function SearchPage() {
     setSuppliers(Array.isArray(data) ? data : [])
 
     setLoading(false)
+
   }
 
   return (
@@ -103,8 +113,7 @@ export default function SearchPage() {
 
             <div className="border-t mt-4 pt-4">
 
-              {supplier.capabilities && supplier.capabilities.length > 0 && (
-
+              {supplier.capabilities?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
 
                   {supplier.capabilities.slice(0,6).map((c:any) => (
@@ -119,10 +128,9 @@ export default function SearchPage() {
                   ))}
 
                 </div>
-
               )}
 
-              {supplier.keywords && supplier.keywords.length > 0 && (
+              {supplier.keywords?.length > 0 && (
 
                 <div className="flex flex-wrap gap-2">
 
@@ -145,17 +153,9 @@ export default function SearchPage() {
 
             <div className="border-t mt-4 pt-4 text-sm text-gray-500">
 
-              <div>
-                ABN: {supplier.abn}
-              </div>
-
-              <div>
-                ABN Status: {supplier.abn_status}
-              </div>
-
-              <div>
-                GST Registered: {supplier.gst_registered ? "Yes" : "No"}
-              </div>
+              <div>ABN: {supplier.abn}</div>
+              <div>ABN Status: {supplier.abn_status}</div>
+              <div>GST Registered: {supplier.gst_registered ? "Yes" : "No"}</div>
 
             </div>
 
