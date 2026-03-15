@@ -9,26 +9,6 @@ connectionString: process.env.DATABASE_URL,
 ssl: { rejectUnauthorized: false }
 })
 
-/* ---------------- SAMPLE SIGNAL DATA ---------------- */
-
-const signals = [
-{
-title: "Major Port Shutdown in Singapore",
-description: "Container congestion causing global freight delays",
-risk_score: 85
-},
-{
-title: "Copper Mine Strike in Chile",
-description: "Labour dispute impacting global copper supply",
-risk_score: 70
-},
-{
-title: "Semiconductor Plant Expansion",
-description: "New chip fab increasing global production",
-risk_score: 30
-}
-]
-
 /* ---------------- SEARCH COMPONENT ---------------- */
 
 function SearchBar({
@@ -51,17 +31,13 @@ className="flex flex-wrap justify-center gap-4"
 name="country"
 className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 >
-
 <option value="">Country</option>
 
 {countries.map((c)=>(
-
 <option key={c} value={c}>
 {c}
 </option>
-
 ))}
-
 </select>
 
 <input
@@ -72,13 +48,9 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[260px]"
 />
 
 <datalist id="capabilities">
-
 {capabilities.map((c)=>(
-
 <option key={c} value={c}/>
-
 ))}
-
 </datalist>
 
 <button
@@ -98,7 +70,7 @@ Search
 
 export default async function Home() {
 
-/* LOAD COUNTRIES FROM DATABASE */
+/* LOAD COUNTRIES */
 
 const countryResult = await pool.query(`
 SELECT DISTINCT country
@@ -108,7 +80,7 @@ ORDER BY country
 
 const countries = countryResult.rows.map((r:any)=>r.country)
 
-/* LOAD CAPABILITIES FROM DATABASE */
+/* LOAD CAPABILITIES */
 
 const capabilityResult = await pool.query(`
 SELECT DISTINCT UNNEST(capabilities) AS capability
@@ -118,14 +90,14 @@ ORDER BY capability
 LIMIT 200
 `)
 
-const capabilities = capabilityResult.rows.map((r:any) =>
-  r.capability
-    .split(" ")
-    .map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
-    .join(" ")
+const capabilities = capabilityResult.rows.map((r:any)=>
+r.capability
+.split(" ")
+.map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
+.join(" ")
 )
 
-/* ---------------- TRENDING CAPABILITIES ---------------- */
+/* TRENDING CAPABILITIES */
 
 const trendingResult = await pool.query(`
 SELECT capability, COUNT(*) AS total
@@ -136,14 +108,14 @@ ORDER BY total DESC
 LIMIT 8
 `)
 
-const trendingCapabilities = trendingResult.rows.map((r:any) =>
-  r.capability
-    .split(" ")
-    .map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
-    .join(" ")
+const trendingCapabilities = trendingResult.rows.map((r:any)=>
+r.capability
+.split(" ")
+.map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
+.join(" ")
 )
 
-/* ---------------- RISK KEYWORDS ---------------- */
+/* RISK KEYWORDS */
 
 const riskKeywords = [
 { word:"strike", score:30 },
@@ -153,17 +125,11 @@ const riskKeywords = [
 { word:"delay", score:20 },
 { word:"disruption", score:30 },
 { word:"congestion", score:20 },
-{ word:"blockade", score:30 },
 { word:"conflict", score:35 },
-{ word:"attack", score:35 },
-
-{ word:"expansion", score:-10 },
-{ word:"investment", score:-5 },
-{ word:"growth", score:-5 },
-{ word:"increase", score:-5 }
+{ word:"attack", score:35 }
 ]
 
-/* ---------------- RSS SUPPLY CHAIN NEWS ---------------- */
+/* RSS FEEDS */
 
 const parser = new Parser()
 
@@ -175,13 +141,14 @@ const feeds = [
 
 let news:any[] = []
 
-for (const feedUrl of feeds) {
+for(const feedUrl of feeds){
 
 try{
 
 const feed = await parser.parseURL(feedUrl)
 
 news.push(
+
 ...feed.items.slice(0,3).map((item:any)=>{
 
 const text = `${item.title ?? ""} ${item.contentSnippet ?? ""}`.toLowerCase()
@@ -196,18 +163,37 @@ risk += k.score
 
 risk = Math.max(0,Math.min(100,risk))
 
+let riskLevel="LOW"
+let riskClass="text-green-600"
+let riskBorder="border-green-500"
+
+if(risk>=70){
+riskLevel="HIGH"
+riskClass="text-red-600"
+riskBorder="border-red-500"
+}
+else if(risk>=40){
+riskLevel="MEDIUM"
+riskClass="text-orange-500"
+riskBorder="border-orange-400"
+}
+
 return{
 title:item.title,
 link:item.link,
 pubDate:item.pubDate,
-risk_score:risk
+risk_score:risk,
+risk_level:riskLevel,
+risk_class:riskClass,
+risk_border:riskBorder
 }
 
 })
+
 )
 
-}catch(err){
-console.log("RSS error:",feedUrl)
+}catch(e){
+console.log("RSS error")
 }
 
 }
@@ -218,38 +204,90 @@ news = news
 .sort((a,b)=>b.risk_score-a.risk_score)
 .slice(0,6)
 
-/* ---------------- GLOBAL RISK CALCULATION ---------------- */
+/* GLOBAL RISK */
 
-const riskValues = news.map(n=>n.risk_score)
-
-const globalRisk =
-riskValues.length > 0
-? Math.round(riskValues.reduce((a,b)=>a+b,0) / riskValues.length)
+const globalRisk = news.length
+? Math.round(news.reduce((a,b)=>a+b.risk_score,0)/news.length)
 : 0
 
-let riskLabel = "LOW"
+let riskLabel="LOW"
+let riskColor="text-green-600"
+let riskBar="bg-gradient-to-r from-green-400 to-emerald-600"
 
-if(globalRisk >= 70) riskLabel = "HIGH"
-else if(globalRisk >= 40) riskLabel = "MEDIUM"
+if(globalRisk>=70){
+riskLabel="HIGH"
+riskColor="text-red-600"
+riskBar="bg-gradient-to-r from-red-400 to-red-700"
+}
+else if(globalRisk>=40){
+riskLabel="MEDIUM"
+riskColor="text-orange-500"
+riskBar="bg-gradient-to-r from-orange-400 to-orange-600"
+}
 
-/* RISK COLOUR */
+const riskWidth=`${globalRisk}%`
 
-let riskColor = "text-green-600"
+/* REGION DETECTION */
 
-if(globalRisk >= 70) riskColor = "text-red-600"
-else if(globalRisk >= 40) riskColor = "text-orange-500"
+const regionKeywords=[
+{region:"Middle East",words:["middle east","red sea","gulf"]},
+{region:"South America",words:["chile","peru","brazil"]},
+{region:"China",words:["china","shanghai"]},
+{region:"Europe",words:["eu","germany","france"]},
+{region:"North America",words:["united states","us","canada"]}
+]
 
-/* RISK BAR WIDTH */
+let regionalRisks:any={}
 
-const riskWidth = `${globalRisk}%`
+news.forEach(article=>{
 
-/* TOP RISK EVENT */
+const text=article.title.toLowerCase()
 
-const topRisk = news[0]
+regionKeywords.forEach(r=>{
 
-/* ---------------- PAGE ---------------- */
+if(r.words.some(w=>text.includes(w))){
 
-return (
+if(!regionalRisks[r.region]){
+regionalRisks[r.region]=[]
+}
+
+regionalRisks[r.region].push(article.risk_score)
+
+}
+
+})
+
+})
+
+const regionList = Object.keys(regionalRisks).map(region=>{
+
+const scores = regionalRisks[region]
+
+const avg = Math.round(scores.reduce((a:number,b:number)=>a+b,0)/scores.length)
+
+let level="LOW"
+let color="text-green-600"
+
+if(avg>=70){
+level="HIGH"
+color="text-red-600"
+}
+else if(avg>=40){
+level="MEDIUM"
+color="text-orange-500"
+}
+
+return{
+region,
+level,
+color
+}
+
+})
+
+/* PAGE */
+
+return(
 
 <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
@@ -258,9 +296,9 @@ return (
 <section
 className="relative h-screen flex items-center justify-center text-center"
 style={{
-backgroundImage: "url('/forest-bg.jpg')",
-backgroundSize: "cover",
-backgroundPosition: "center"
+backgroundImage:"url('/forest-bg.jpg')",
+backgroundSize:"cover",
+backgroundPosition:"center"
 }}
 >
 
@@ -285,73 +323,77 @@ capabilities={capabilities}
 
 </section>
 
-{/* GLOBAL SUPPLY CHAIN RISK */}
+{/* DISRUPTION TICKER */}
 
-<section className="max-w-4xl mx-auto py-12 text-center">
+<section className="bg-black text-white py-3 overflow-hidden">
+<div className="whitespace-nowrap animate-marquee text-sm">
 
-<h2 className="text-2xl font-bold mb-6">
-Global Supply Chain Risk
+{news.map((n,i)=>(
+<span key={i} className="mx-8">
+⚠ {n.title}
+</span>
+))}
+
+</div>
+</section>
+
+{/* DASHBOARD STRIP */}
+
+<section className="bg-gray-900 py-16">
+
+<div className="max-w-7xl mx-auto px-6">
+
+<h2 className="text-3xl font-bold text-white text-center mb-10">
+Supply Chain Intelligence
 </h2>
 
-<div className={`text-5xl font-bold mb-4 ${riskColor}`}>
+<div className="grid md:grid-cols-3 gap-6">
+
+{/* GLOBAL RISK */}
+
+<div className="bg-white rounded-xl shadow-md border p-6 text-center">
+
+<h3 className="font-semibold mb-4">
+Global Supply Chain Risk
+</h3>
+
+<div className={`text-6xl font-bold mb-3 ${riskColor}`}>
 {globalRisk}
 </div>
 
-<div className="w-full max-w-md mx-auto h-4 bg-gray-200 rounded-full overflow-hidden mb-4">
-
+<div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-3">
 <div
-className={`h-full ${riskColor.replace("text","bg")}`}
-style={{ width: riskWidth }}
+className={`h-full ${riskBar} transition-all duration-700`}
+style={{width:riskWidth}}
 ></div>
+</div>
+
+<p className={`font-semibold ${riskColor}`}>
+{riskLabel} RISK
+</p>
 
 </div>
 
-<p className={`text-lg font-semibold ${riskColor}`}>
-Risk Level: {riskLabel}
-</p>
+{/* TRENDING */}
 
-{topRisk && (
+<div className="bg-white rounded-xl shadow-md border p-6 text-center">
 
-<div className="mt-6">
+<h3 className="font-semibold mb-4">
+Trending Capabilities
+</h3>
 
-<p className="text-sm text-gray-500 mb-1">
-Top Risk Event
-</p>
-
-<a
-href={topRisk.link}
-target="_blank"
-className="font-semibold hover:underline"
->
-
-{topRisk.title}
-
-</a>
-
-</div>
-
-)}
-
-</section>
-
-{/* TRENDING SUPPLIER CAPABILITIES */}
-
-<section className="max-w-6xl mx-auto py-10 px-6 text-center">
-
-<h2 className="text-2xl font-bold mb-6">
-Trending Supplier Capabilities
-</h2>
-
-<div className="flex flex-wrap justify-center gap-3">
+<div className="flex flex-wrap justify-center gap-2">
 
 {trendingCapabilities.map((cap,i)=>(
 
 <a
 key={i}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-4 py-2 bg-white border rounded-full shadow-sm hover:bg-gray-100 text-sm font-medium"
+className="px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-medium
+hover:bg-white hover:shadow-md hover:border-gray-300 transition flex items-center gap-1"
 >
 
+<span className="text-gray-400">⚙</span>
 {cap}
 
 </a>
@@ -360,9 +402,37 @@ className="px-4 py-2 bg-white border rounded-full shadow-sm hover:bg-gray-100 te
 
 </div>
 
+</div>
+
+{/* DISRUPTION MAP */}
+
+<div className="bg-white rounded-xl shadow-md border p-6 text-center">
+
+<h3 className="font-semibold mb-4">
+Global Disruptions
+</h3>
+
+<div className="space-y-2 text-sm">
+
+{regionList.map((r,i)=>(
+
+<p key={i} className={`${r.color} font-semibold`}>
+{r.region} — {r.level}
+</p>
+
+))}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
 </section>
 
-{/* SUPPLY CHAIN INTELLIGENCE */}
+{/* NEWS */}
 
 <section className="max-w-6xl mx-auto py-16 px-6">
 
@@ -378,20 +448,24 @@ Live Supply Chain Intelligence
 key={i}
 href={item.link}
 target="_blank"
-className="p-5 bg-white rounded-lg shadow hover:shadow-lg transition"
+className={`flex gap-4 p-5 bg-white rounded-lg shadow hover:shadow-lg transition border-l-4 ${item.risk_border}`}
 >
 
-<p className="text-xs text-gray-500 mb-2">
-{new Date(item.pubDate).toLocaleDateString()}
+<div>
+
+<p className={`text-xs font-semibold ${item.risk_class}`}>
+{item.risk_level} RISK
 </p>
 
-<h3 className="font-semibold text-lg text-gray-900">
+<h3 className="font-semibold text-sm text-gray-900 mt-1 leading-snug">
 {item.title}
 </h3>
 
-<p className="text-sm mt-2 text-gray-500">
-Risk Score: {item.risk_score}
+<p className="text-xs text-gray-400 mt-2">
+{new Date(item.pubDate).toLocaleDateString()}
 </p>
+
+</div>
 
 </a>
 
