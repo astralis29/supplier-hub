@@ -125,6 +125,24 @@ const capabilities = capabilityResult.rows.map((r:any) =>
     .join(" ")
 )
 
+/* ---------------- TRENDING CAPABILITIES ---------------- */
+
+const trendingResult = await pool.query(`
+SELECT capability, COUNT(*) AS total
+FROM supplier_profiles,
+UNNEST(capabilities) AS capability
+GROUP BY capability
+ORDER BY total DESC
+LIMIT 8
+`)
+
+const trendingCapabilities = trendingResult.rows.map((r:any) =>
+  r.capability
+    .split(" ")
+    .map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
+    .join(" ")
+)
+
 /* ---------------- RISK KEYWORDS ---------------- */
 
 const riskKeywords = [
@@ -279,8 +297,6 @@ Global Supply Chain Risk
 {globalRisk}
 </div>
 
-{/* Risk Bar */}
-
 <div className="w-full max-w-md mx-auto h-4 bg-gray-200 rounded-full overflow-hidden mb-4">
 
 <div
@@ -293,8 +309,6 @@ style={{ width: riskWidth }}
 <p className={`text-lg font-semibold ${riskColor}`}>
 Risk Level: {riskLabel}
 </p>
-
-{/* TOP RISK EVENT */}
 
 {topRisk && (
 
@@ -317,6 +331,34 @@ className="font-semibold hover:underline"
 </div>
 
 )}
+
+</section>
+
+{/* TRENDING SUPPLIER CAPABILITIES */}
+
+<section className="max-w-6xl mx-auto py-10 px-6 text-center">
+
+<h2 className="text-2xl font-bold mb-6">
+Trending Supplier Capabilities
+</h2>
+
+<div className="flex flex-wrap justify-center gap-3">
+
+{trendingCapabilities.map((cap,i)=>(
+
+<a
+key={i}
+href={`/search?capability=${encodeURIComponent(cap)}`}
+className="px-4 py-2 bg-white border rounded-full shadow-sm hover:bg-gray-100 text-sm font-medium"
+>
+
+{cap}
+
+</a>
+
+))}
+
+</div>
 
 </section>
 
