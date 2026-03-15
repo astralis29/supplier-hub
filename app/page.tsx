@@ -1,6 +1,13 @@
 export const revalidate = 0
 export const dynamic = "force-dynamic"
 
+import { Pool } from "pg"
+
+const pool = new Pool({
+connectionString: process.env.DATABASE_URL,
+ssl: { rejectUnauthorized: false }
+})
+
 /* ---------------- SAMPLE SIGNAL DATA ---------------- */
 
 const signals = [
@@ -23,7 +30,13 @@ risk_score: 30
 
 /* ---------------- SEARCH COMPONENT ---------------- */
 
-function SearchBar() {
+function SearchBar({
+countries,
+capabilities
+}:{
+countries:string[],
+capabilities:string[]
+}){
 
 return (
 
@@ -37,37 +50,30 @@ className="flex flex-wrap justify-center gap-4"
 name="country"
 className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 >
-<option value="">Country</option>
-<option value="Australia">Australia</option>
-<option value="United States">United States</option>
-<option value="China">China</option>
-<option value="Germany">Germany</option>
-<option value="United Kingdom">United Kingdom</option>
-</select>
 
-<select
-name="industry"
-className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
->
-<option value="">Industry</option>
-<option value="Mining">Mining</option>
-<option value="Manufacturing">Manufacturing</option>
-<option value="Energy">Energy</option>
-<option value="Construction">Construction</option>
-<option value="Engineering">Engineering</option>
-<option value="Logistics">Logistics</option>
+<option value="">Country</option>
+
+{countries.map((c)=>(
+<option key={c} value={c}>
+{c}
+</option>
+))}
+
 </select>
 
 <select
 name="capability"
-className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
+className="px-4 py-3 rounded-lg border bg-white text-black min-w-[220px]"
 >
+
 <option value="">Capability</option>
-<option value="Fabrication">Fabrication</option>
-<option value="Machining">Machining</option>
-<option value="Casting">Casting</option>
-<option value="Engineering">Engineering</option>
-<option value="Automation">Automation</option>
+
+{capabilities.map((c)=>(
+<option key={c} value={c}>
+{c}
+</option>
+))}
+
 </select>
 
 <button
@@ -86,6 +92,28 @@ Search
 /* ---------------- HOME PAGE ---------------- */
 
 export default async function Home() {
+
+/* LOAD COUNTRIES FROM DATABASE */
+
+const countryResult = await pool.query(`
+SELECT DISTINCT country
+FROM supplier_profiles
+ORDER BY country
+`)
+
+const countries = countryResult.rows.map((r:any)=>r.country)
+
+/* LOAD CAPABILITIES FROM DATABASE */
+
+const capabilityResult = await pool.query(`
+SELECT DISTINCT UNNEST(capabilities) AS capability
+FROM supplier_profiles
+WHERE capabilities IS NOT NULL
+ORDER BY capability
+LIMIT 200
+`)
+
+const capabilities = capabilityResult.rows.map((r:any)=>r.capability)
 
 /* INDUSTRY FILTER TERMS */
 
@@ -160,128 +188,10 @@ Discover Verified Industrial Suppliers
 AI-powered supplier discovery with real-time supply chain intelligence.
 </p>
 
-<SearchBar/>
-
-</div>
-
-</section>
-
-{/* ALERT BAR */}
-
-{highRisk.length > 0 && (
-
-<section className="bg-red-600 text-white py-2 overflow-hidden">
-
-<div className="max-w-7xl mx-auto">
-
-<div className="flex gap-10 whitespace-nowrap">
-
-{highRisk.slice(0,10).map((alert:any,i:number)=>(
-<span key={i} className="font-medium">
-⚠ {alert.title} (Risk {alert.risk_score})
-</span>
-))}
-
-</div>
-
-</div>
-
-</section>
-
-)}
-
-{/* GLOBAL INDEX */}
-
-<section className="py-8 bg-white border-b">
-
-<div className="max-w-6xl mx-auto px-6 flex justify-between">
-
-<div>
-
-<h2 className="text-sm uppercase text-gray-500">
-Global Supply Chain Risk Index
-</h2>
-
-<div className="text-4xl font-bold">
-{avgRisk} / 100
-</div>
-
-</div>
-
-<div>
-
-{avgRisk >= 60 && <span className="text-red-600 font-semibold">Elevated Risk</span>}
-{avgRisk >= 30 && avgRisk < 60 && <span className="text-orange-500 font-semibold">Moderate Risk</span>}
-{avgRisk < 30 && <span className="text-green-600 font-semibold">Normal Conditions</span>}
-
-</div>
-
-</div>
-
-</section>
-
-{/* DASHBOARD */}
-
-<section className="py-12 bg-gray-50">
-
-<div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-6">
-
-<div>
-
-<h3 className="text-red-600 font-semibold mb-4">
-High Risk
-</h3>
-
-{highRisk.slice(0,3).map((signal:any)=>(
-<div key={signal.title} className="border-l-4 border-red-600 bg-white p-4 mb-3">
-<div className="text-xs text-red-600 font-semibold">
-HIGH RISK · Score {signal.risk_score}
-</div>
-<div className="font-semibold text-sm mt-1">
-{signal.title}
-</div>
-</div>
-))}
-
-</div>
-
-<div>
-
-<h3 className="text-orange-500 font-semibold mb-4">
-Medium Risk
-</h3>
-
-{mediumRisk.slice(0,3).map((signal:any)=>(
-<div key={signal.title} className="border-l-4 border-orange-500 bg-white p-4 mb-3">
-<div className="text-xs text-orange-500 font-semibold">
-MEDIUM RISK · Score {signal.risk_score}
-</div>
-<div className="font-semibold text-sm mt-1">
-{signal.title}
-</div>
-</div>
-))}
-
-</div>
-
-<div>
-
-<h3 className="text-gray-600 font-semibold mb-4">
-Industry Signals
-</h3>
-
-{usableSignals.slice(0,3).map((signal:any)=>(
-<div key={signal.title} className="border-l-4 border-gray-300 bg-white p-4 mb-3">
-<div className="text-xs text-gray-500">
-INDUSTRY SIGNAL
-</div>
-<div className="font-semibold text-sm mt-1">
-{signal.title}
-</div>
-</div>
-))}
-
-</div>
+<SearchBar
+countries={countries}
+capabilities={capabilities}
+/>
 
 </div>
 
