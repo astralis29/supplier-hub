@@ -61,20 +61,18 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 
 </select>
 
-<select
+<input
+list="capabilities"
 name="capability"
-className="px-4 py-3 rounded-lg border bg-white text-black min-w-[220px]"
->
+placeholder="Search capability..."
+className="px-4 py-3 rounded-lg border bg-white text-black min-w-[260px]"
+/>
 
-<option value="">Capability</option>
-
+<datalist id="capabilities">
 {capabilities.map((c)=>(
-<option key={c} value={c}>
-{c}
-</option>
+<option key={c} value={c}/>
 ))}
-
-</select>
+</datalist>
 
 <button
 type="submit"
@@ -113,7 +111,12 @@ ORDER BY capability
 LIMIT 200
 `)
 
-const capabilities = capabilityResult.rows.map((r:any)=>r.capability)
+const capabilities = capabilityResult.rows.map((r:any) =>
+  r.capability
+    .split(" ")
+    .map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
+    .join(" ")
+)
 
 /* INDUSTRY FILTER TERMS */
 
