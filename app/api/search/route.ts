@@ -9,12 +9,14 @@ export async function GET(req: Request) {
   try {
 
     const { searchParams } = new URL(req.url)
+
     const q = searchParams.get("q") || ""
+    const country = searchParams.get("country")
+    const capability = searchParams.get("capability")
 
     const search = `%${q}%`
 
-    const result = await pool.query(
-      `
+    let query = `
       SELECT
         sp.abn,
         sp.abn_name,
@@ -49,16 +51,35 @@ export async function GET(req: Request) {
       ON sp.abn = abr.abn
 
       WHERE
-        ($1 = '%%')
-        OR sp.abn_name ILIKE $1
-        OR array_to_string(sp.keywords,' ') ILIKE $1
-        OR array_to_string(sp.capabilities,' ') ILIKE $1
+        (
+          ($1 = '%%')
+          OR sp.abn_name ILIKE $1
+          OR array_to_string(sp.keywords,' ') ILIKE $1
+          OR array_to_string(sp.capabilities,' ') ILIKE $1
+        )
+    `
 
+    const params: any[] = [search]
+    let index = 2
+
+    if (country) {
+      query += ` AND sp.country = $${index}`
+      params.push(country)
+      index++
+    }
+
+    if (capability) {
+      query += ` AND array_to_string(sp.capabilities,' ') ILIKE $${index}`
+      params.push(`%${capability}%`)
+      index++
+    }
+
+    query += `
       ORDER BY sp.abn_name
       LIMIT 1000
-      `,
-      [search]
-    )
+    `
+
+    const result = await pool.query(query, params)
 
     return Response.json(result.rows)
 
