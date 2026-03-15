@@ -47,7 +47,9 @@ function SearchContent(){
 
   return (
 
-    <main className="max-w-6xl mx-auto p-8 space-y-8">
+    <main className="max-w-7xl mx-auto p-8 space-y-8">
+
+      {/* Title */}
 
       <div className="space-y-3">
 
@@ -61,6 +63,8 @@ function SearchContent(){
 
       </div>
 
+
+      {/* Search */}
 
       <div className="flex gap-4 items-center">
 
@@ -80,155 +84,158 @@ function SearchContent(){
       </div>
 
 
-      <div className="space-y-6">
+      {/* Directory Table */}
 
-{suppliers.map((supplier:any) => (
+      <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
 
-  <div
-    key={supplier.abn}
-    className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm hover:shadow-lg transition duration-200"
-  >
+        {/* Header */}
 
-    <div className="flex justify-between items-start gap-4">
+        <div className="grid grid-cols-12 gap-4 bg-gray-50 text-xs font-semibold text-gray-500 uppercase p-4 border-b">
 
-      <div className="space-y-2">
-
-        <div className="text-xl font-semibold">
-          {supplier.abn_name}
-        </div>
-
-        <div className="text-gray-500 text-sm">
-          {supplier.state} {supplier.postcode}
-        </div>
-
-        {supplier.website && (
-          <a
-            href={supplier.website}
-            target="_blank"
-            className="text-blue-600 text-sm hover:underline"
-          >
-            🌐 {supplier.website_name || supplier.domain}
-          </a>
-        )}
-
-      </div>
-
-      {supplier.domain && (
-        <img
-          src={`https://logo.clearbit.com/${supplier.domain}`}
-          className="w-14 h-14 rounded-md border"
-        />
-      )}
-
-    </div>
-
-
-    {/* Capabilities */}
-
-    {supplier.capabilities?.length > 0 && (
-
-      <div className="border-t mt-4 pt-4">
-
-        <div className="flex flex-wrap gap-2">
-
-          {supplier.capabilities.slice(0,6).map((c:any) => (
-
-            <span
-              key={c}
-              className="text-xs bg-gray-100 border border-gray-200 px-3 py-1 rounded-full"
-            >
-              {c}
-            </span>
-
-          ))}
+          <div className="col-span-1">Logo</div>
+          <div className="col-span-4">Company</div>
+          <div className="col-span-3">Capabilities</div>
+          <div className="col-span-2">Website</div>
+          <div className="col-span-1">Status</div>
+          <div className="col-span-1 text-right">View</div>
 
         </div>
 
-      </div>
 
-    )}
+        {/* Rows */}
 
+{suppliers.map((supplier:any)=>(
 
-    {/* Keywords */}
+<div
+key={supplier.abn}
+className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
+>
 
-    {supplier.keywords?.length > 0 && (
+{/* Logo */}
 
-      <div className="mt-3 flex flex-wrap gap-2">
+<div className="col-span-1">
 
-        {supplier.keywords.slice(0,4).map((k:any) => (
+{supplier.domain && (
 
-          <span
-            key={k}
-            className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded"
-          >
-            {k}
-          </span>
+<img
+src={`https://logo.clearbit.com/${supplier.domain}`}
+className="w-10 h-10 rounded border"
+/>
 
-        ))}
+)}
 
-      </div>
-
-    )}
-
-
-    {/* Business Info */}
-
-    <div className="border-t mt-4 pt-4 flex flex-wrap gap-6 text-sm">
-
-      <div className="text-gray-600">
-        ABN: {supplier.abn}
-      </div>
-
-      {/* ABN STATUS */}
-
-      {supplier.abn_status === "ACT" ? (
-
-        <div className="flex items-center gap-1 text-green-600 font-medium">
-          ✔ ABN Active
-        </div>
-
-      ) : (
-
-        <div className="flex items-center gap-1 text-red-600 font-medium">
-          ✖ ABN Inactive
-        </div>
-
-      )}
+</div>
 
 
-      {/* GST STATUS */}
+{/* Company */}
 
-      {supplier.gst_registered ? (
+<div className="col-span-4 space-y-1">
 
-        <div className="flex items-center gap-1 text-green-600">
-          ✔ GST Registered
-        </div>
+<div className="font-semibold">
+{supplier.abn_name}
+</div>
 
-      ) : (
+<div className="text-sm text-gray-500">
+{supplier.state} {supplier.postcode}
+</div>
 
-        <div className="flex items-center gap-1 text-red-500">
-          ✖ GST Not Registered
-        </div>
+<div className="text-xs text-gray-500">
+ABN: {supplier.abn}
+</div>
 
-      )}
-
-    </div>
+</div>
 
 
-    {/* View Supplier */}
+{/* Capabilities */}
 
-    <div className="mt-4">
+<div className="col-span-3 flex flex-wrap gap-2">
 
-      <Link
-        href={`/suppliers/${supplier.abn}`}
-        className="text-blue-600 text-sm font-medium hover:underline"
-      >
-        View Supplier →
-      </Link>
+{supplier.capabilities?.slice(0,4).map((c:any)=>(
 
-    </div>
+<span
+key={c}
+className="text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded"
+>
+{c}
+</span>
 
-  </div>
+))}
+
+</div>
+
+
+{/* Website */}
+
+<div className="col-span-2 text-sm">
+
+{supplier.website && (
+
+<a
+href={supplier.website}
+target="_blank"
+className="text-blue-600 hover:underline"
+>
+
+{supplier.website_name || supplier.domain}
+
+</a>
+
+)}
+
+</div>
+
+
+{/* Status */}
+
+<div className="col-span-1 text-xs space-y-1">
+
+{supplier.abn_status === "ACT" ? (
+
+<div className="text-green-600">
+✔ Active
+</div>
+
+) : (
+
+<div className="text-red-600">
+✖ Inactive
+</div>
+
+)}
+
+{supplier.gst_registered ? (
+
+<div className="text-green-600">
+✔ GST
+</div>
+
+) : (
+
+<div className="text-red-500">
+✖ GST
+</div>
+
+)}
+
+</div>
+
+
+{/* View */}
+
+<div className="col-span-1 text-right">
+
+<Link
+href={`/suppliers/${supplier.abn}`}
+className="text-blue-600 text-sm hover:underline"
+>
+
+View →
+
+</Link>
+
+</div>
+
+</div>
 
 ))}
 
