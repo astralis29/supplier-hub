@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 
 function SearchContent(){
 
@@ -48,26 +49,36 @@ function SearchContent(){
 
     <main className="max-w-6xl mx-auto p-8 space-y-8">
 
-      <h1 className="text-4xl font-bold">
-        Discover Industrial Suppliers
-      </h1>
+      <div className="space-y-3">
 
-      <p className="text-gray-500">
-        Search verified Australian suppliers by capability, company name, or industry
-      </p>
+        <h1 className="text-4xl font-bold">
+          Discover Industrial Suppliers
+        </h1>
 
-      <input
-        className="border p-3 rounded-lg w-full max-w-md"
-        placeholder="Search suppliers, capabilities..."
-        value={query}
-        onChange={(e)=>setQuery(e.target.value)}
-      />
+        <p className="text-gray-500">
+          Search verified Australian suppliers by capability, company name, or industry
+        </p>
 
-      {loading && (
-        <div className="text-gray-400">
-          Searching suppliers...
-        </div>
-      )}
+      </div>
+
+
+      <div className="flex gap-4 items-center">
+
+        <input
+          className="border border-gray-300 p-3 rounded-lg w-full max-w-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Search suppliers, capabilities..."
+          value={query}
+          onChange={(e)=>setQuery(e.target.value)}
+        />
+
+        {loading && (
+          <div className="text-sm text-gray-400">
+            Searching...
+          </div>
+        )}
+
+      </div>
+
 
       <div className="space-y-6">
 
@@ -75,10 +86,10 @@ function SearchContent(){
 
   <div
     key={supplier.abn}
-    className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition"
+    className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm hover:shadow-lg transition duration-200"
   >
 
-    <div className="flex justify-between items-start">
+    <div className="flex justify-between items-start gap-4">
 
       <div className="space-y-2">
 
@@ -105,23 +116,26 @@ function SearchContent(){
       {supplier.domain && (
         <img
           src={`https://logo.clearbit.com/${supplier.domain}`}
-          className="w-12 h-12 rounded"
+          className="w-14 h-14 rounded-md border"
         />
       )}
 
     </div>
 
-    <div className="border-t mt-4 pt-4">
 
-      {supplier.capabilities?.length > 0 && (
+    {/* Capabilities */}
 
-        <div className="flex flex-wrap gap-2 mb-2">
+    {supplier.capabilities?.length > 0 && (
+
+      <div className="border-t mt-4 pt-4">
+
+        <div className="flex flex-wrap gap-2">
 
           {supplier.capabilities.slice(0,6).map((c:any) => (
 
             <span
               key={c}
-              className="text-xs bg-gray-100 px-2 py-1 rounded"
+              className="text-xs bg-gray-100 border border-gray-200 px-3 py-1 rounded-full"
             >
               {c}
             </span>
@@ -130,42 +144,62 @@ function SearchContent(){
 
         </div>
 
-      )}
+      </div>
 
-      {supplier.keywords?.length > 0 && (
+    )}
 
-        <div className="flex flex-wrap gap-2">
 
-          {supplier.keywords.slice(0,4).map((k:any) => (
+    {/* Keywords */}
 
-            <span
-              key={k}
-              className="text-xs bg-blue-50 px-2 py-1 rounded"
-            >
-              {k}
-            </span>
+    {supplier.keywords?.length > 0 && (
 
-          ))}
+      <div className="mt-3 flex flex-wrap gap-2">
 
-        </div>
+        {supplier.keywords.slice(0,4).map((k:any) => (
 
-      )}
+          <span
+            key={k}
+            className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded"
+          >
+            {k}
+          </span>
 
-    </div>
+        ))}
 
-    <div className="border-t mt-4 pt-4 text-sm text-gray-500">
+      </div>
+
+    )}
+
+
+    {/* Business Info */}
+
+    <div className="border-t mt-4 pt-4 flex flex-wrap gap-6 text-sm text-gray-500">
 
       <div>
         ABN: {supplier.abn}
       </div>
 
       <div>
-        ABN Status: {supplier.abn_status}
+        {supplier.abn_status === "Active" ? "✔ Active ABN" : "ABN Inactive"}
       </div>
 
       <div>
-        GST Registered: {supplier.gst_registered ? "Yes" : "No"}
+        {supplier.gst_registered ? "✔ GST Registered" : "GST Not Registered"}
       </div>
+
+    </div>
+
+
+    {/* View Supplier */}
+
+    <div className="mt-4">
+
+      <Link
+        href={`/suppliers/${supplier.abn}`}
+        className="text-blue-600 text-sm font-medium hover:underline"
+      >
+        View Supplier →
+      </Link>
 
     </div>
 
