@@ -134,9 +134,11 @@ const riskKeywords = [
 const parser = new Parser()
 
 const feeds = [
-"https://www.supplychaindive.com/feeds/news/",
-"https://www.freightwaves.com/feed",
-"https://www.joc.com/rss.xml"
+"https://feeds.fastcast.ai/seattle-storm-the-daily-news-now.xml",
+"https://feeds.fastcast.ai/phoenix-mercury-the-daily-news-now.xml",
+"https://feeds.fastcast.ai/minnesota-lynx-the-daily-news-now.xml",
+"https://feeds.fastcast.ai/new-york-liberty-the-daily-news-now.xml",
+"https://feeds.fastcast.ai/las-vegas-aces-the-daily-news-now.xml"
 ]
 
 let news:any[] = []
