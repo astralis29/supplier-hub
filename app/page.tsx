@@ -70,7 +70,7 @@ Search
 
 export default async function Home() {
 
-/* LOAD COUNTRIES */
+/* COUNTRIES */
 
 const countryResult = await pool.query(`
 SELECT DISTINCT country
@@ -80,7 +80,7 @@ ORDER BY country
 
 const countries = countryResult.rows.map((r:any)=>r.country)
 
-/* LOAD CAPABILITIES */
+/* CAPABILITIES */
 
 const capabilityResult = await pool.query(`
 SELECT DISTINCT UNNEST(capabilities) AS capability
@@ -97,7 +97,7 @@ r.capability
 .join(" ")
 )
 
-/* TRENDING CAPABILITIES */
+/* TRENDING */
 
 const trendingResult = await pool.query(`
 SELECT capability, COUNT(*) AS total
@@ -115,7 +115,7 @@ r.capability
 .join(" ")
 )
 
-/* RISK KEYWORDS */
+/* ---------------- RISK KEYWORDS ---------------- */
 
 const riskKeywords = [
 { word:"strike", score:30 },
@@ -129,7 +129,7 @@ const riskKeywords = [
 { word:"attack", score:35 }
 ]
 
-/* RSS FEEDS */
+/* ---------------- RSS ---------------- */
 
 const parser = new Parser()
 
@@ -198,7 +198,13 @@ console.log("RSS error")
 
 }
 
-/* SORT NEWS */
+/* REMOVE DUPLICATES */
+
+news = news.filter(
+(v,i,a)=>a.findIndex(t=>t.title===v.title)===i
+)
+
+/* SORT */
 
 news = news
 .sort((a,b)=>b.risk_score-a.risk_score)
@@ -227,7 +233,7 @@ riskBar="bg-gradient-to-r from-orange-400 to-orange-600"
 
 const riskWidth=`${globalRisk}%`
 
-/* REGION DETECTION */
+/* REGIONS */
 
 const regionKeywords=[
 {region:"Middle East",words:["middle east","red sea","gulf"]},
@@ -285,7 +291,7 @@ color
 
 })
 
-/* PAGE */
+/* ---------------- PAGE ---------------- */
 
 return(
 
@@ -306,7 +312,7 @@ backgroundPosition:"center"
 
 <div className="relative z-10 w-full max-w-5xl px-6">
 
-<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
+<h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
 Discover Verified Industrial Suppliers
 </h1>
 
@@ -323,13 +329,13 @@ capabilities={capabilities}
 
 </section>
 
-{/* DISRUPTION TICKER */}
+{/* TICKER */}
 
 <section className="bg-black text-white py-3 overflow-hidden">
 <div className="whitespace-nowrap animate-marquee text-sm">
 
 {news.map((n,i)=>(
-<span key={i} className="mx-8">
+<span key={i} className="mx-10">
 ⚠ {n.title}
 </span>
 ))}
@@ -337,31 +343,31 @@ capabilities={capabilities}
 </div>
 </section>
 
-{/* DASHBOARD STRIP */}
+{/* DASHBOARD */}
 
-<section className="bg-gray-900 py-16">
+<section className="bg-gradient-to-r from-gray-900 to-blue-950 py-20">
 
 <div className="max-w-7xl mx-auto px-6">
 
-<h2 className="text-3xl font-bold text-white text-center mb-10">
+<h2 className="text-3xl font-bold text-white text-center mb-12">
 Supply Chain Intelligence
 </h2>
 
-<div className="grid md:grid-cols-3 gap-6">
+<div className="grid md:grid-cols-3 gap-8">
 
-{/* GLOBAL RISK */}
+{/* RISK */}
 
-<div className="bg-white rounded-xl shadow-md border p-6 text-center">
+<div className="backdrop-blur bg-white/90 rounded-xl shadow-xl border p-8 text-center">
 
 <h3 className="font-semibold mb-4">
 Global Supply Chain Risk
 </h3>
 
-<div className={`text-6xl font-bold mb-3 ${riskColor}`}>
+<div className={`text-6xl font-bold mb-4 ${riskColor}`}>
 {globalRisk}
 </div>
 
-<div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-3">
+<div className="w-full h-5 bg-gray-200 rounded-full overflow-hidden mb-4">
 <div
 className={`h-full ${riskBar} transition-all duration-700`}
 style={{width:riskWidth}}
@@ -376,7 +382,7 @@ style={{width:riskWidth}}
 
 {/* TRENDING */}
 
-<div className="bg-white rounded-xl shadow-md border p-6 text-center">
+<div className="backdrop-blur bg-white/90 rounded-xl shadow-xl border p-8 text-center">
 
 <h3 className="font-semibold mb-4">
 Trending Capabilities
@@ -389,8 +395,8 @@ Trending Capabilities
 <a
 key={i}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-medium
-hover:bg-white hover:shadow-md hover:border-gray-300 transition flex items-center gap-1"
+className="px-3 py-1 bg-gray-100 border border-gray-200 rounded-full text-xs font-medium
+hover:bg-white hover:shadow hover:border-gray-300 transition flex items-center gap-1"
 >
 
 <span className="text-gray-400">⚙</span>
@@ -404,9 +410,9 @@ hover:bg-white hover:shadow-md hover:border-gray-300 transition flex items-cente
 
 </div>
 
-{/* DISRUPTION MAP */}
+{/* DISRUPTIONS */}
 
-<div className="bg-white rounded-xl shadow-md border p-6 text-center">
+<div className="backdrop-blur bg-white/90 rounded-xl shadow-xl border p-8 text-center">
 
 <h3 className="font-semibold mb-4">
 Global Disruptions
@@ -415,11 +421,9 @@ Global Disruptions
 <div className="space-y-2 text-sm">
 
 {regionList.map((r,i)=>(
-
 <p key={i} className={`${r.color} font-semibold`}>
 {r.region} — {r.level}
 </p>
-
 ))}
 
 </div>
@@ -436,11 +440,11 @@ Global Disruptions
 
 <section className="max-w-6xl mx-auto py-16 px-6">
 
-<h2 className="text-2xl font-bold mb-8 text-center">
+<h2 className="text-2xl font-bold mb-10 text-center">
 Live Supply Chain Intelligence
 </h2>
 
-<div className="grid md:grid-cols-2 gap-6">
+<div className="grid md:grid-cols-2 gap-8">
 
 {news.map((item,i)=>(
 
@@ -448,7 +452,7 @@ Live Supply Chain Intelligence
 key={i}
 href={item.link}
 target="_blank"
-className={`flex gap-4 p-5 bg-white rounded-lg shadow hover:shadow-lg transition border-l-4 ${item.risk_border}`}
+className={`flex gap-4 p-6 bg-white rounded-xl shadow hover:shadow-lg transition border-l-4 ${item.risk_border}`}
 >
 
 <div>
@@ -457,7 +461,7 @@ className={`flex gap-4 p-5 bg-white rounded-lg shadow hover:shadow-lg transition
 {item.risk_level} RISK
 </p>
 
-<h3 className="font-semibold text-sm text-gray-900 mt-1 leading-snug">
+<h3 className="font-semibold text-base text-gray-900 mt-1 leading-snug">
 {item.title}
 </h3>
 
