@@ -13,6 +13,10 @@ export async function GET(req: Request) {
     const q = searchParams.get("q") || ""
     const country = searchParams.get("country")
     const capability = searchParams.get("capability")
+    const page = Number(searchParams.get("page") || "1")
+
+    const limit = 25
+    const offset = (page - 1) * limit
 
     const search = `%${q}%`
 
@@ -74,14 +78,37 @@ export async function GET(req: Request) {
       index++
     }
 
+    /* ---------- COUNT TOTAL RESULTS ---------- */
+
+    const countQuery = `
+      SELECT COUNT(*) FROM supplier_profiles sp
+      WHERE
+        (
+          ($1 = '%%')
+          OR sp.abn_name ILIKE $1
+          OR array_to_string(sp.keywords,' ') ILIKE $1
+          OR array_to_string(sp.capabilities,' ') ILIKE $1
+        )
+    `
+
+    const countResult = await pool.query(countQuery, [search])
+    const totalRows = Number(countResult.rows[0].count)
+    const totalPages = Math.ceil(totalRows / limit)
+
+    /* ---------- MAIN QUERY ---------- */
+
     query += `
       ORDER BY sp.abn_name
-      LIMIT 1000
+      LIMIT ${limit}
+      OFFSET ${offset}
     `
 
     const result = await pool.query(query, params)
 
-    return Response.json(result.rows)
+    return Response.json({
+      suppliers: result.rows,
+      totalPages
+    })
 
   } catch (err) {
     console.error(err)
