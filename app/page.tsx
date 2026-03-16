@@ -33,10 +33,9 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 <option value="">Country</option>
 
 {countries.map((c)=>(
-<option key={c} value={c}>
-{c}
-</option>
+<option key={c} value={c}>{c}</option>
 ))}
+
 </select>
 
 <input
@@ -54,7 +53,7 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[260px]"
 
 <button
 type="submit"
-className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition"
 >
 Search
 </button>
@@ -120,6 +119,7 @@ abn_name,
 domain,
 state,
 postcode,
+capabilities,
 array_length(capabilities,1) AS capability_count
 FROM supplier_profiles
 WHERE capabilities IS NOT NULL
@@ -144,44 +144,21 @@ LIMIT 6
 const countries = countryResult.rows.map((r:any)=>r.country)
 
 const capabilities = capabilityResult.rows.map((r:any)=>
-r.capability
-.split(" ")
-.map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
-.join(" ")
+r.capability.split(" ").map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")
 )
 
 const industrialCapabilities = industrialTrending.rows.map((r:any)=>
-r.capability
-.split(" ")
-.map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
-.join(" ")
+r.capability.split(" ").map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")
 )
 
 const businessCapabilities = businessTrending.rows.map((r:any)=>
-r.capability
-.split(" ")
-.map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
-.join(" ")
+r.capability.split(" ").map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")
 )
 
 const featuredSuppliers = featuredSuppliersResult.rows
 const newSuppliers = newSuppliersResult.rows
 
-/* ---------------- RISK KEYWORDS ---------------- */
-
-const riskKeywords = [
-{ word:"strike", score:30 },
-{ word:"shutdown", score:35 },
-{ word:"shortage", score:25 },
-{ word:"sanction", score:25 },
-{ word:"delay", score:20 },
-{ word:"disruption", score:30 },
-{ word:"congestion", score:20 },
-{ word:"conflict", score:35 },
-{ word:"attack", score:35 }
-]
-
-/* ---------------- RSS ---------------- */
+/* ---------------- RSS NEWS ---------------- */
 
 const parser = new Parser()
 
@@ -228,34 +205,34 @@ const text = `${item.title ?? ""} ${item.contentSnippet ?? ""}`.toLowerCase()
 
 let risk = 0
 
-for(const k of riskKeywords){
-if(text.includes(k.word)){
-risk += k.score
-}
-}
+if(text.includes("strike")) risk += 30
+if(text.includes("shutdown")) risk += 35
+if(text.includes("shortage")) risk += 25
+if(text.includes("delay")) risk += 20
+if(text.includes("disruption")) risk += 30
+if(text.includes("conflict")) risk += 35
 
 risk = Math.max(0,Math.min(100,risk))
 
-let riskLevel="LOW"
 let riskClass="text-green-600"
 let riskBorder="border-green-500"
+let riskLevel="LOW"
 
 if(risk>=70){
-riskLevel="HIGH"
 riskClass="text-red-600"
 riskBorder="border-red-500"
+riskLevel="HIGH"
 }
 else if(risk>=40){
-riskLevel="MEDIUM"
 riskClass="text-orange-500"
 riskBorder="border-orange-400"
+riskLevel="MEDIUM"
 }
 
 return{
 title:item.title,
 link:item.link,
 pubDate:item.pubDate,
-risk_score:risk,
 risk_level:riskLevel,
 risk_class:riskClass,
 risk_border:riskBorder
@@ -267,13 +244,8 @@ risk_border:riskBorder
 
 })
 
-news = news.filter(
-(v,i,a)=>a.findIndex(t=>t.title===v.title)===i
-)
-
-news = news
-.sort((a,b)=>b.risk_score-a.risk_score)
-.slice(0,6)
+news = news.filter((v,i,a)=>a.findIndex(t=>t.title===v.title)===i)
+news = news.slice(0,6)
 
 /* ---------------- PAGE ---------------- */
 
@@ -284,7 +256,7 @@ return(
 {/* HERO */}
 
 <section
-className="relative h-screen flex items-center justify-center text-center"
+className="relative h-[65vh] flex items-center justify-center text-center"
 style={{
 backgroundImage:"url('/forest-bg.jpg')",
 backgroundSize:"cover",
@@ -304,40 +276,27 @@ Discover Verified Industrial Suppliers
 AI-powered supplier discovery with real-time supply chain intelligence.
 </p>
 
-<SearchBar
-countries={countries}
-capabilities={capabilities}
-/>
+<SearchBar countries={countries} capabilities={capabilities}/>
 
 </div>
 
 </section>
 
-{/* TICKER */}
+{/* TRENDING */}
 
-<section className="bg-black text-white py-3 overflow-hidden">
-<div className="whitespace-nowrap animate-marquee text-sm">
-
-{news.map((n,i)=>(
-<span key={i} className="mx-10">
-⚠ {n.title}
-</span>
-))}
-
-</div>
-</section>
-
-{/* TRENDING PANELS */}
-
-<section className="max-w-7xl mx-auto py-20 px-6">
+<section className="max-w-7xl mx-auto py-14 px-6">
 
 <div className="grid md:grid-cols-2 gap-8">
 
 <div className="bg-white rounded-xl shadow border p-8 text-center">
 
-<h3 className="font-semibold mb-4">
+<h3 className="font-semibold mb-2">
 ⚙ Trending Industrial Capabilities
 </h3>
+
+<p className="text-xs text-gray-500 mb-4">
+Most searched manufacturing capabilities
+</p>
 
 <div className="flex flex-wrap justify-center gap-2">
 
@@ -346,11 +305,9 @@ capabilities={capabilities}
 <a
 key={i}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
+className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow transition"
 >
-
 {cap}
-
 </a>
 
 ))}
@@ -361,9 +318,13 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
 
 <div className="bg-white rounded-xl shadow border p-8 text-center">
 
-<h3 className="font-semibold mb-4">
+<h3 className="font-semibold mb-2">
 💼 Trending Business Services
 </h3>
+
+<p className="text-xs text-gray-500 mb-4">
+Popular professional services suppliers
+</p>
 
 <div className="flex flex-wrap justify-center gap-2">
 
@@ -372,11 +333,9 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
 <a
 key={i}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
+className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow transition"
 >
-
 {cap}
-
 </a>
 
 ))}
@@ -391,7 +350,7 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
 
 {/* FEATURED SUPPLIERS */}
 
-<section className="max-w-6xl mx-auto py-16 px-6">
+<section className="max-w-6xl mx-auto py-14 px-6">
 
 <h2 className="text-2xl font-bold mb-8 text-center">
 ⭐ Featured Suppliers
@@ -401,7 +360,26 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
 
 {featuredSuppliers.map((supplier:any)=>(
 
-<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border">
+<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border hover:shadow-lg transition">
+
+<div className="w-10 h-10 relative">
+
+{supplier.domain && (
+<img
+src={`https://logo.clearbit.com/${supplier.domain}`}
+className="w-10 h-10 rounded border absolute top-0 left-0 object-contain"
+onError={(e)=>{
+const target = e.target as HTMLImageElement
+target.style.display="none"
+}}
+/>
+)}
+
+<div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded border text-sm font-semibold">
+{supplier.abn_name?.charAt(0)}
+</div>
+
+</div>
 
 <div className="flex-1">
 
@@ -419,10 +397,7 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
 
 </div>
 
-<a
-href={`/suppliers/${supplier.abn}`}
-className="text-blue-600 text-sm hover:underline"
->
+<a href={`/suppliers/${supplier.abn}`} className="text-blue-600 text-sm hover:underline">
 View →
 </a>
 
@@ -436,7 +411,7 @@ View →
 
 {/* NEW SUPPLIERS */}
 
-<section className="max-w-6xl mx-auto py-16 px-6">
+<section className="max-w-6xl mx-auto py-14 px-6">
 
 <h2 className="text-2xl font-bold mb-8 text-center">
 🆕 New Suppliers Discovered
@@ -446,7 +421,7 @@ View →
 
 {newSuppliers.map((supplier:any)=>(
 
-<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border">
+<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border hover:shadow-lg transition">
 
 <div className="flex-1">
 
@@ -460,10 +435,7 @@ View →
 
 </div>
 
-<a
-href={`/suppliers/${supplier.abn}`}
-className="text-blue-600 text-sm hover:underline"
->
+<a href={`/suppliers/${supplier.abn}`} className="text-blue-600 text-sm hover:underline">
 View →
 </a>
 
@@ -477,7 +449,7 @@ View →
 
 {/* NEWS */}
 
-<section className="max-w-6xl mx-auto py-16 px-6">
+<section className="max-w-6xl mx-auto py-14 px-6">
 
 <h2 className="text-2xl font-bold mb-10 text-center">
 Live Supply Chain Intelligence
@@ -491,7 +463,7 @@ Live Supply Chain Intelligence
 key={i}
 href={item.link}
 target="_blank"
-className={`flex gap-4 p-6 bg-white rounded-xl shadow border-l-4 ${item.risk_border}`}
+className={`flex gap-4 p-6 bg-white rounded-xl shadow hover:shadow-lg transition border-l-4 ${item.risk_border}`}
 >
 
 <div>
@@ -518,7 +490,7 @@ className={`flex gap-4 p-6 bg-white rounded-xl shadow border-l-4 ${item.risk_bor
 
 </section>
 
-<footer className="py-12 bg-black text-gray-400 text-center text-sm">
+<footer className="py-10 bg-black text-gray-400 text-center text-sm">
 © {new Date().getFullYear()} What's the Supplier?
 </footer>
 
