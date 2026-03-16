@@ -87,7 +87,6 @@ SELECT DISTINCT UNNEST(capabilities) AS capability
 FROM supplier_profiles
 WHERE capabilities IS NOT NULL
 ORDER BY capability
-LIMIT 200
 `)
 
 const capabilities = capabilityResult.rows.map((r:any)=>
