@@ -12,6 +12,9 @@ function SearchContent(){
   const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(false)
 
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
   const country = searchParams.get("country")
   const capability = searchParams.get("capability")
 
@@ -23,7 +26,7 @@ function SearchContent(){
 
     return ()=>clearTimeout(delay)
 
-  },[query,country,capability])
+  },[query,country,capability,page])
 
 
   async function fetchSuppliers(){
@@ -36,10 +39,13 @@ function SearchContent(){
     if(country) params.append("country",country)
     if(capability) params.append("capability",capability)
 
+    params.append("page",String(page))
+
     const res = await fetch(`/api/search?${params}`)
     const data = await res.json()
 
-    setSuppliers(Array.isArray(data)?data:[])
+    setSuppliers(Array.isArray(data.suppliers)?data.suppliers:[])
+    setTotalPages(data.totalPages || 1)
 
     setLoading(false)
 
@@ -80,7 +86,10 @@ function SearchContent(){
           className="border border-gray-300 p-3 rounded-lg w-full max-w-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Search suppliers, capabilities..."
           value={query}
-          onChange={(e)=>setQuery(e.target.value)}
+          onChange={(e)=>{
+            setQuery(e.target.value)
+            setPage(1)
+          }}
         />
 
         {loading && (
@@ -125,8 +134,6 @@ className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 tr
 
 <div className="w-10 h-10 relative">
 
-{/* Logo image */}
-
 {supplier.domain && (
 
 <img
@@ -139,8 +146,6 @@ onError={(e)=>{
 />
 
 )}
-
-{/* Fallback letter */}
 
 <div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded border text-sm font-semibold">
 {supplier.abn_name?.charAt(0)}
@@ -264,6 +269,45 @@ View →
 ))}
 
       </div>
+
+
+{/* Pagination */}
+
+<div className="flex justify-center items-center gap-3 mt-8 flex-wrap">
+
+<button
+onClick={()=>setPage(page-1)}
+disabled={page===1}
+className="px-3 py-1 border rounded disabled:opacity-40"
+>
+Prev
+</button>
+
+{Array.from({length:totalPages},(_,i)=>i+1)
+.slice(0,20)
+.map(p=>(
+
+<button
+key={p}
+onClick={()=>setPage(p)}
+className={`px-3 py-1 border rounded ${
+p===page ? "bg-black text-white" : "bg-white"
+}`}
+>
+{p}
+</button>
+
+))}
+
+<button
+onClick={()=>setPage(page+1)}
+disabled={page===totalPages}
+className="px-3 py-1 border rounded disabled:opacity-40"
+>
+Next
+</button>
+
+</div>
 
     </main>
 
