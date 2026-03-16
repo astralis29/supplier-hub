@@ -11,25 +11,25 @@ export async function GET() {
     "https://feeds.fastcast.ai/new-york-liberty-the-daily-news-now.xml",
     "https://www.supplychaindive.com/feeds/news/",
     "https://www.freightwaves.com/feed",
-   "https://www.joc.com/rss.xml",
-   "https://maritime-executive.com/rss/news",
+    "https://www.joc.com/rss.xml",
+    "https://maritime-executive.com/rss/news",
     "https://feeds.fastcast.ai/las-vegas-aces-the-daily-news-now.xml",
     "https://gcaptain.com/feed",
     "https://www.afr.com/rss/business",
     "https://www.abc.net.au/news/feed/51892/rss.xml",
     "https://www.theaustralian.com.au/business/rss",
     "https://www.mining.com/feed/",
-    "https://oilprice.com/rss/main",  
+    "https://oilprice.com/rss/main",
   ]
 
   /* INDUSTRY FILTER TERMS */
 
   const industryTerms = [
     "freight","logistics","shipping","cargo","container","port",
-    "supply chain","transport","rail","trucking","air freight", "derail", "cyclone", "bushfire",
+    "supply chain","transport","rail","trucking","air freight","derail","cyclone","bushfire",
 
     "mining","mine","lithium","copper","iron ore","nickel",
-    "rare earth","steel","coal","metals","commodity", "blockade", "price surge", "strait",
+    "rare earth","steel","coal","metals","commodity","blockade","price surge","strait",
 
     "oil","gas","lng","energy","pipeline","refinery",
     "power","electricity","grid","renewable","solar","wind",
@@ -45,39 +45,36 @@ export async function GET() {
 
       const feed = await parser.parseURL(feedUrl)
 
-      items.push(
+      const filtered = feed.items
+        .slice(0,5)
 
-        ...feed.items.slice(0, 5).map(item => {
+        /* FILTER FIRST */
 
-          const text = `${item.title ?? ""} ${item.contentSnippet ?? ""}`.toLowerCase()
+        .filter(item => {
 
-          /* INDUSTRY FILTER */
+          const text = `${item.title ?? ""} ${item.contentSnippet ?? ""} ${item.content ?? ""}`.toLowerCase()
 
-          const isIndustry = industryTerms.some(term => text.includes(term))
-
-          if (!isIndustry) return null
-
-          return {
-            title: item.title,
-            link: item.link,
-            pubDate: item.pubDate
-          }
+          return industryTerms.some(term => text.includes(term))
 
         })
 
-      )
+        /* THEN MAP */
+
+        .map(item => ({
+          title: item.title,
+          link: item.link,
+          pubDate: item.pubDate
+        }))
+
+      items.push(...filtered)
 
     } catch (err) {
 
-      console.error("RSS error:", err)
+      console.error("RSS error:", feedUrl)
 
     }
 
   }
-
-  /* REMOVE NULL RESULTS */
-
-  items = items.filter(Boolean)
 
   /* REMOVE DUPLICATES */
 
