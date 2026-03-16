@@ -43,6 +43,7 @@ className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
 list="capabilities"
 name="capability"
 placeholder="Search capability..."
+autoComplete="off"
 className="px-4 py-3 rounded-lg border bg-white text-black min-w-[260px]"
 />
 
