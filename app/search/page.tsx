@@ -12,8 +12,10 @@ function SearchContent(){
   const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+
+  const [cursorStack, setCursorStack] = useState<string[]>([])
 
   const country = searchParams.get("country")
   const capability = searchParams.get("capability")
@@ -26,7 +28,7 @@ function SearchContent(){
 
     return ()=>clearTimeout(delay)
 
-  },[query,country,capability,page])
+  },[query,country,capability,cursor])
 
 
   async function fetchSuppliers(){
@@ -38,20 +40,18 @@ function SearchContent(){
     if(query) params.append("q",query)
     if(country) params.append("country",country)
     if(capability) params.append("capability",capability)
-
-    params.append("page",String(page))
+    if(cursor) params.append("cursor",cursor)
 
     const res = await fetch(`/api/search?${params}`)
     const data = await res.json()
 
     setSuppliers(Array.isArray(data.suppliers)?data.suppliers:[])
-    setTotalPages(data.totalPages || 1)
+    setNextCursor(data.nextCursor || null)
 
     setLoading(false)
 
   }
 
-  // Convert capability text to Title Case
   function toTitleCase(str:string){
     if(!str) return ""
     return str
@@ -59,11 +59,30 @@ function SearchContent(){
       .replace(/\b\w/g,(l)=>l.toUpperCase())
   }
 
+  function goNext(){
+
+    if(!nextCursor) return
+
+    setCursorStack([...cursorStack, cursor || ""])
+    setCursor(nextCursor)
+
+  }
+
+  function goPrev(){
+
+    if(cursorStack.length === 0) return
+
+    const newStack = [...cursorStack]
+    const prevCursor = newStack.pop() || null
+
+    setCursor(prevCursor)
+    setCursorStack(newStack)
+
+  }
+
   return (
 
     <main className="max-w-7xl mx-auto p-8 space-y-8">
-
-      {/* Title */}
 
       <div className="space-y-3">
 
@@ -77,9 +96,6 @@ function SearchContent(){
 
       </div>
 
-
-      {/* Search */}
-
       <div className="flex gap-4 items-center">
 
         <input
@@ -88,7 +104,8 @@ function SearchContent(){
           value={query}
           onChange={(e)=>{
             setQuery(e.target.value)
-            setPage(1)
+            setCursor(null)
+            setCursorStack([])
           }}
         />
 
@@ -100,12 +117,7 @@ function SearchContent(){
 
       </div>
 
-
-      {/* Directory Table */}
-
       <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-
-        {/* Header */}
 
         <div className="grid grid-cols-12 gap-4 bg-gray-50 text-xs font-semibold text-gray-500 uppercase p-4 border-b">
 
@@ -118,17 +130,12 @@ function SearchContent(){
 
         </div>
 
-
-        {/* Rows */}
-
 {suppliers.map((supplier:any)=>(
 
 <div
 key={supplier.abn}
 className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
 >
-
-{/* Logo */}
 
 <div className="col-span-1">
 
@@ -155,9 +162,6 @@ onError={(e)=>{
 
 </div>
 
-
-{/* Company */}
-
 <div className="col-span-4 space-y-1">
 
 <div className="font-semibold">
@@ -174,9 +178,6 @@ ABN: {supplier.abn}
 
 </div>
 
-
-{/* Capabilities */}
-
 <div className="col-span-3 flex flex-wrap gap-2">
 
 {supplier.capabilities?.slice(0,4).map((c:any)=>(
@@ -191,9 +192,6 @@ className="text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded"
 ))}
 
 </div>
-
-
-{/* Website */}
 
 <div className="col-span-2 text-sm">
 
@@ -212,9 +210,6 @@ className="text-blue-600 hover:underline"
 )}
 
 </div>
-
-
-{/* Status */}
 
 <div className="col-span-1 text-xs space-y-1">
 
@@ -248,9 +243,6 @@ className="text-blue-600 hover:underline"
 
 </div>
 
-
-{/* View */}
-
 <div className="col-span-1 text-right">
 
 <Link
@@ -270,39 +262,22 @@ View →
 
       </div>
 
+{/* Cursor Pagination */}
 
-{/* Pagination */}
-
-<div className="flex justify-center items-center gap-3 mt-8 flex-wrap">
+<div className="flex justify-center items-center gap-4 mt-8">
 
 <button
-onClick={()=>setPage(page-1)}
-disabled={page===1}
-className="px-3 py-1 border rounded disabled:opacity-40"
+onClick={goPrev}
+disabled={cursorStack.length===0}
+className="px-4 py-2 border rounded disabled:opacity-40"
 >
 Prev
 </button>
 
-{Array.from({length:totalPages},(_,i)=>i+1)
-.slice(0,20)
-.map(p=>(
-
 <button
-key={p}
-onClick={()=>setPage(p)}
-className={`px-3 py-1 border rounded ${
-p===page ? "bg-black text-white" : "bg-white"
-}`}
->
-{p}
-</button>
-
-))}
-
-<button
-onClick={()=>setPage(page+1)}
-disabled={page===totalPages}
-className="px-3 py-1 border rounded disabled:opacity-40"
+onClick={goNext}
+disabled={!nextCursor}
+className="px-4 py-2 border rounded disabled:opacity-40"
 >
 Next
 </button>

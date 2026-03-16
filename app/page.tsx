@@ -74,31 +74,71 @@ export default async function Home() {
 const [
   countryResult,
   capabilityResult,
-  trendingResult
+  industrialTrending,
+  businessTrending,
+  featuredSuppliersResult,
+  newSuppliersResult
 ] = await Promise.all([
 
-  pool.query(`
-    SELECT DISTINCT country
-    FROM supplier_profiles
-    ORDER BY country
-  `),
+pool.query(`
+SELECT DISTINCT country
+FROM supplier_profiles
+ORDER BY country
+`),
 
-  pool.query(`
-    SELECT DISTINCT UNNEST(capabilities) AS capability
-    FROM supplier_profiles
-    WHERE capabilities IS NOT NULL
-    ORDER BY capability
-  `),
+pool.query(`
+SELECT DISTINCT UNNEST(capabilities) AS capability
+FROM supplier_profiles
+WHERE capabilities IS NOT NULL
+ORDER BY capability
+`),
 
-  pool.query(`
-    SELECT capability, COUNT(*) AS total
-    FROM supplier_profiles,
-    UNNEST(capabilities) AS capability
-    GROUP BY capability
-    ORDER BY total DESC
-    LIMIT 8
-  `)
+pool.query(`
+SELECT capability, COUNT(*) AS total
+FROM supplier_profiles,
+UNNEST(capabilities) AS capability
+WHERE sector = 'industrial'
+GROUP BY capability
+ORDER BY total DESC
+LIMIT 6
+`),
 
+pool.query(`
+SELECT capability, COUNT(*) AS total
+FROM supplier_profiles,
+UNNEST(capabilities) AS capability
+WHERE sector != 'industrial'
+GROUP BY capability
+ORDER BY total DESC
+LIMIT 6
+`),
+
+pool.query(`
+SELECT
+abn,
+abn_name,
+domain,
+state,
+postcode,
+array_length(capabilities,1) AS capability_count
+FROM supplier_profiles
+WHERE capabilities IS NOT NULL
+ORDER BY capability_count DESC
+LIMIT 6
+`),
+
+pool.query(`
+SELECT
+abn,
+abn_name,
+domain,
+state,
+postcode
+FROM supplier_profiles
+WHERE last_crawled >= NOW() - INTERVAL '24 hours'
+ORDER BY last_crawled DESC
+LIMIT 6
+`)
 ])
 
 const countries = countryResult.rows.map((r:any)=>r.country)
@@ -110,12 +150,22 @@ r.capability
 .join(" ")
 )
 
-const trendingCapabilities = trendingResult.rows.map((r:any)=>
+const industrialCapabilities = industrialTrending.rows.map((r:any)=>
 r.capability
 .split(" ")
 .map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
 .join(" ")
 )
+
+const businessCapabilities = businessTrending.rows.map((r:any)=>
+r.capability
+.split(" ")
+.map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1))
+.join(" ")
+)
+
+const featuredSuppliers = featuredSuppliersResult.rows
+const newSuppliers = newSuppliersResult.rows
 
 /* ---------------- RISK KEYWORDS ---------------- */
 
@@ -158,10 +208,8 @@ const feeds = [
 "https://www.bom.gov.au/rss/warnings.xml"
 ]
 
-/* ---------- PARALLEL RSS FETCH ---------- */
-
 const rssResults = await Promise.allSettled(
-  feeds.map(url => parser.parseURL(url))
+feeds.map(url => parser.parseURL(url))
 )
 
 let news:any[] = []
@@ -219,98 +267,13 @@ risk_border:riskBorder
 
 })
 
-/* REMOVE DUPLICATES */
-
 news = news.filter(
 (v,i,a)=>a.findIndex(t=>t.title===v.title)===i
 )
 
-/* SORT */
-
 news = news
 .sort((a,b)=>b.risk_score-a.risk_score)
 .slice(0,6)
-
-/* GLOBAL RISK */
-
-const globalRisk = news.length
-? Math.round(news.reduce((a,b)=>a+b.risk_score,0)/news.length)
-: 0
-
-let riskLabel="LOW"
-let riskColor="text-green-600"
-let riskBar="bg-gradient-to-r from-green-400 to-emerald-600"
-
-if(globalRisk>=70){
-riskLabel="HIGH"
-riskColor="text-red-600"
-riskBar="bg-gradient-to-r from-red-400 to-red-700"
-}
-else if(globalRisk>=40){
-riskLabel="MEDIUM"
-riskColor="text-orange-500"
-riskBar="bg-gradient-to-r from-orange-400 to-orange-600"
-}
-
-const riskWidth=`${globalRisk}%`
-
-/* REGIONS */
-
-const regionKeywords=[
-{region:"Middle East",words:["middle east","red sea","gulf"]},
-{region:"South America",words:["chile","peru","brazil"]},
-{region:"China",words:["china","shanghai"]},
-{region:"Europe",words:["eu","germany","france"]},
-{region:"North America",words:["united states","us","canada"]}
-]
-
-let regionalRisks:any={}
-
-news.forEach(article=>{
-
-const text=article.title.toLowerCase()
-
-regionKeywords.forEach(r=>{
-
-if(r.words.some(w=>text.includes(w))){
-
-if(!regionalRisks[r.region]){
-regionalRisks[r.region]=[]
-}
-
-regionalRisks[r.region].push(article.risk_score)
-
-}
-
-})
-
-})
-
-const regionList = Object.keys(regionalRisks).map(region=>{
-
-const scores = regionalRisks[region]
-
-const avg = Math.round(scores.reduce((a:number,b:number)=>a+b,0)/scores.length)
-
-let level="LOW"
-let color="text-green-600"
-
-if(avg>=70){
-level="HIGH"
-color="text-red-600"
-}
-else if(avg>=40){
-level="MEDIUM"
-color="text-orange-500"
-}
-
-return{
-region,
-level,
-color
-}
-
-})
 
 /* ---------------- PAGE ---------------- */
 
@@ -364,63 +327,28 @@ capabilities={capabilities}
 </div>
 </section>
 
-{/* DASHBOARD */}
+{/* TRENDING PANELS */}
 
-<section className="bg-gradient-to-r from-gray-900 to-blue-950 py-20">
+<section className="max-w-7xl mx-auto py-20 px-6">
 
-<div className="max-w-7xl mx-auto px-6">
+<div className="grid md:grid-cols-2 gap-8">
 
-<h2 className="text-3xl font-bold text-white text-center mb-12">
-Supply Chain Intelligence
-</h2>
-
-<div className="grid md:grid-cols-3 gap-8">
-
-{/* RISK */}
-
-<div className="backdrop-blur bg-white/90 rounded-xl shadow-xl border p-8 text-center">
+<div className="bg-white rounded-xl shadow border p-8 text-center">
 
 <h3 className="font-semibold mb-4">
-Global Supply Chain Risk
-</h3>
-
-<div className={`text-6xl font-bold mb-4 ${riskColor}`}>
-{globalRisk}
-</div>
-
-<div className="w-full h-5 bg-gray-200 rounded-full overflow-hidden mb-4">
-<div
-className={`h-full ${riskBar} transition-all duration-700`}
-style={{width:riskWidth}}
-></div>
-</div>
-
-<p className={`font-semibold ${riskColor}`}>
-{riskLabel} RISK
-</p>
-
-</div>
-
-{/* TRENDING */}
-
-<div className="backdrop-blur bg-white/90 rounded-xl shadow-xl border p-8 text-center">
-
-<h3 className="font-semibold mb-4">
-Trending Capabilities
+⚙ Trending Industrial Capabilities
 </h3>
 
 <div className="flex flex-wrap justify-center gap-2">
 
-{trendingCapabilities.map((cap,i)=>(
+{industrialCapabilities.map((cap,i)=>(
 
 <a
 key={i}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border border-gray-200 rounded-full text-xs font-medium
-hover:bg-white hover:shadow hover:border-gray-300 transition flex items-center gap-1"
+className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
 >
 
-<span className="text-gray-400">⚙</span>
 {cap}
 
 </a>
@@ -431,20 +359,26 @@ hover:bg-white hover:shadow hover:border-gray-300 transition flex items-center g
 
 </div>
 
-{/* DISRUPTIONS */}
-
-<div className="backdrop-blur bg-white/90 rounded-xl shadow-xl border p-8 text-center">
+<div className="bg-white rounded-xl shadow border p-8 text-center">
 
 <h3 className="font-semibold mb-4">
-Global Disruptions
+💼 Trending Business Services
 </h3>
 
-<div className="space-y-2 text-sm">
+<div className="flex flex-wrap justify-center gap-2">
 
-{regionList.map((r,i)=>(
-<p key={i} className={`${r.color} font-semibold`}>
-{r.region} — {r.level}
-</p>
+{businessCapabilities.map((cap,i)=>(
+
+<a
+key={i}
+href={`/search?capability=${encodeURIComponent(cap)}`}
+className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white"
+>
+
+{cap}
+
+</a>
+
 ))}
 
 </div>
@@ -452,6 +386,90 @@ Global Disruptions
 </div>
 
 </div>
+
+</section>
+
+{/* FEATURED SUPPLIERS */}
+
+<section className="max-w-6xl mx-auto py-16 px-6">
+
+<h2 className="text-2xl font-bold mb-8 text-center">
+⭐ Featured Suppliers
+</h2>
+
+<div className="grid md:grid-cols-2 gap-6">
+
+{featuredSuppliers.map((supplier:any)=>(
+
+<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border">
+
+<div className="flex-1">
+
+<div className="font-semibold">
+{supplier.abn_name}
+</div>
+
+<div className="text-xs text-gray-500">
+{supplier.state} {supplier.postcode}
+</div>
+
+<div className="text-xs text-gray-400">
+{supplier.capability_count} capabilities
+</div>
+
+</div>
+
+<a
+href={`/suppliers/${supplier.abn}`}
+className="text-blue-600 text-sm hover:underline"
+>
+View →
+</a>
+
+</div>
+
+))}
+
+</div>
+
+</section>
+
+{/* NEW SUPPLIERS */}
+
+<section className="max-w-6xl mx-auto py-16 px-6">
+
+<h2 className="text-2xl font-bold mb-8 text-center">
+🆕 New Suppliers Discovered
+</h2>
+
+<div className="grid md:grid-cols-2 gap-6">
+
+{newSuppliers.map((supplier:any)=>(
+
+<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border">
+
+<div className="flex-1">
+
+<div className="font-semibold">
+{supplier.abn_name}
+</div>
+
+<div className="text-xs text-gray-500">
+{supplier.state} {supplier.postcode}
+</div>
+
+</div>
+
+<a
+href={`/suppliers/${supplier.abn}`}
+className="text-blue-600 text-sm hover:underline"
+>
+View →
+</a>
+
+</div>
+
+))}
 
 </div>
 
@@ -473,7 +491,7 @@ Live Supply Chain Intelligence
 key={i}
 href={item.link}
 target="_blank"
-className={`flex gap-4 p-6 bg-white rounded-xl shadow hover:shadow-lg transition border-l-4 ${item.risk_border}`}
+className={`flex gap-4 p-6 bg-white rounded-xl shadow border-l-4 ${item.risk_border}`}
 >
 
 <div>
@@ -482,7 +500,7 @@ className={`flex gap-4 p-6 bg-white rounded-xl shadow hover:shadow-lg transition
 {item.risk_level} RISK
 </p>
 
-<h3 className="font-semibold text-base text-gray-900 mt-1 leading-snug">
+<h3 className="font-semibold text-base mt-1">
 {item.title}
 </h3>
 
