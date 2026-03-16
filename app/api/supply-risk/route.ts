@@ -54,7 +54,41 @@ export async function GET() {
 
           const text = `${item.title ?? ""} ${item.contentSnippet ?? ""} ${item.content ?? ""}`.toLowerCase()
 
-          return industryTerms.some(term => text.includes(term))
+          const coreTerms = [
+"supply chain",
+"shipping",
+"freight",
+"logistics",
+"port",
+"container",
+"cargo",
+"rail",
+"trucking",
+"strait",
+"freight",
+"Shipping",
+"Cargo",
+"Haulage",
+"Transit",
+"Carrier",
+"Fleet",
+"Intermodal",
+"Linehaul",
+"Freight forwarding",
+"Shipping lanes",
+"Disruption",
+"Shortage",
+"Bottleneck",
+"Delays",
+"Strike",
+"Sanctions",
+"Tariffs",
+]
+
+const hasIndustry = industryTerms.some(term => text.includes(term))
+const hasCore = coreTerms.some(term => text.includes(term))
+
+return hasIndustry && hasCore
 
         })
 
