@@ -6,6 +6,7 @@ const pool = new Pool({
 })
 
 export async function GET(req: Request) {
+
   try {
 
     const { searchParams } = new URL(req.url)
@@ -13,10 +14,9 @@ export async function GET(req: Request) {
     const q = searchParams.get("q") || ""
     const country = searchParams.get("country")
     const capability = searchParams.get("capability")
-    const page = Number(searchParams.get("page") || "1")
+    const cursor = searchParams.get("cursor")
 
     const limit = 25
-    const offset = (page - 1) * limit
 
     const search = `%${q}%`
 
@@ -55,16 +55,26 @@ export async function GET(req: Request) {
       ON sp.abn = abr.abn
 
       WHERE
-        (
-          ($1 = '%%')
-          OR sp.abn_name ILIKE $1
-          OR array_to_string(sp.keywords,' ') ILIKE $1
-          OR array_to_string(sp.capabilities,' ') ILIKE $1
+      (
+        ($1 = '%%')
+        OR sp.abn_name ILIKE $1
+        OR EXISTS (
+          SELECT 1
+          FROM unnest(sp.keywords) k
+          WHERE k ILIKE $1
         )
+        OR EXISTS (
+          SELECT 1
+          FROM unnest(sp.capabilities) c
+          WHERE c ILIKE $1
+        )
+      )
     `
 
     const params: any[] = [search]
     let index = 2
+
+    /* ---------- COUNTRY FILTER ---------- */
 
     if (country) {
       query += ` AND sp.country = $${index}`
@@ -72,46 +82,58 @@ export async function GET(req: Request) {
       index++
     }
 
+    /* ---------- CAPABILITY FILTER ---------- */
+
     if (capability) {
-      query += ` AND array_to_string(sp.capabilities,' ') ILIKE $${index}`
+      query += `
+        AND EXISTS (
+          SELECT 1
+          FROM unnest(sp.capabilities) c
+          WHERE c ILIKE $${index}
+        )
+      `
       params.push(`%${capability}%`)
       index++
     }
 
-    /* ---------- COUNT TOTAL RESULTS ---------- */
+    /* ---------- CURSOR PAGINATION ---------- */
 
-    const countQuery = `
-      SELECT COUNT(*) FROM supplier_profiles sp
-      WHERE
-        (
-          ($1 = '%%')
-          OR sp.abn_name ILIKE $1
-          OR array_to_string(sp.keywords,' ') ILIKE $1
-          OR array_to_string(sp.capabilities,' ') ILIKE $1
-        )
-    `
-
-    const countResult = await pool.query(countQuery, [search])
-    const totalRows = Number(countResult.rows[0].count)
-    const totalPages = Math.ceil(totalRows / limit)
+    if (cursor) {
+      query += ` AND sp.abn_name > $${index}`
+      params.push(cursor)
+      index++
+    }
 
     /* ---------- MAIN QUERY ---------- */
 
     query += `
       ORDER BY sp.abn_name
       LIMIT ${limit}
-      OFFSET ${offset}
     `
 
     const result = await pool.query(query, params)
 
+    /* ---------- NEXT CURSOR ---------- */
+
+    const nextCursor =
+      result.rows.length === limit
+        ? result.rows[result.rows.length - 1].abn_name
+        : null
+
     return Response.json({
       suppliers: result.rows,
-      totalPages
+      nextCursor
     })
 
   } catch (err) {
+
     console.error(err)
-    return Response.json({ error: String(err) }, { status: 500 })
+
+    return Response.json(
+      { error: String(err) },
+      { status: 500 }
+    )
+
   }
+
 }
