@@ -2,6 +2,7 @@ export const revalidate = 600
 
 import { Pool } from "pg"
 import Parser from "rss-parser"
+import Image from "next/image"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -364,20 +365,23 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:sha
 
 <div className="w-10 h-10 relative">
 
-{supplier.domain && (
-<img
+{supplier.domain ? (
+
+<Image
 src={`https://logo.clearbit.com/${supplier.domain}`}
-className="w-10 h-10 rounded border absolute top-0 left-0 object-contain"
-onError={(e)=>{
-const target = e.target as HTMLImageElement
-target.style.display="none"
-}}
+alt={supplier.abn_name}
+width={40}
+height={40}
+className="rounded border object-contain"
 />
-)}
+
+) : (
 
 <div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded border text-sm font-semibold">
 {supplier.abn_name?.charAt(0)}
 </div>
+
+)}
 
 </div>
 
