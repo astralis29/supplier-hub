@@ -15,9 +15,32 @@ export async function GET(req: Request) {
     const country = searchParams.get("country")
     const capability = searchParams.get("capability")
     const cursor = searchParams.get("cursor")
+    const suggest = searchParams.get("suggest")
+
+    /* -----------------------------------------
+       AUTOCOMPLETE MODE
+    ------------------------------------------*/
+
+    if (suggest && q.length >= 2) {
+
+      const result = await pool.query(`
+        SELECT capability
+        FROM capability_stats
+        WHERE capability ILIKE $1
+        ORDER BY total DESC
+        LIMIT 10
+      `, [`%${q}%`])
+
+      return Response.json({
+        suggestions: result.rows
+      })
+    }
+
+    /* -----------------------------------------
+       NORMAL SUPPLIER SEARCH
+    ------------------------------------------*/
 
     const limit = 25
-
     const search = `%${q}%`
 
     let query = `
@@ -112,8 +135,6 @@ export async function GET(req: Request) {
     `
 
     const result = await pool.query(query, params)
-
-    /* ---------- NEXT CURSOR ---------- */
 
     const nextCursor =
       result.rows.length === limit

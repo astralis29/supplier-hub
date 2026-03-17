@@ -1,103 +1,35 @@
 export const revalidate = 600
 
 import { Pool } from "pg"
-import Parser from "rss-parser"
 import Image from "next/image"
+import SearchBar from "./components/SearchBar"
+
+/* ---------------- DB ---------------- */
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 })
 
-/* ---------------- SEARCH COMPONENT ---------------- */
-
-function SearchBar({
-  countries,
-  capabilities
-}:{
-  countries:string[],
-  capabilities:string[]
-}){
-
-return (
-
-<form
-method="GET"
-action="/search"
-className="flex flex-wrap justify-center gap-4"
->
-
-<select
-name="country"
-className="px-4 py-3 rounded-lg border bg-white text-black min-w-[160px]"
->
-<option value="">Country</option>
-
-{countries.map((c)=>(
-<option key={c} value={c}>{c}</option>
-))}
-
-</select>
-
-<input
-list="capabilities"
-name="capability"
-placeholder="Search capability..."
-autoComplete="off"
-className="px-4 py-3 rounded-lg border bg-white text-black min-w-[260px]"
-/>
-
-<datalist id="capabilities">
-{capabilities.map((c)=>(
-<option key={c} value={c}/>
-))}
-</datalist>
-
-<button
-type="submit"
-className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition"
->
-Search
-</button>
-
-</form>
-
-)
-
-}
-
 /* ---------------- HOME PAGE ---------------- */
 
 export default async function Home() {
 
-/* ---------------- PARALLEL DATABASE QUERIES ---------------- */
+/* ---------------- DB ---------------- */
 
 const [
   countryResult,
-  capabilityResult,
   industrialTrending,
   businessTrending,
   featuredSuppliersResult,
   newSuppliersResult
 ] = await Promise.all([
 
-pool.query(`
-SELECT DISTINCT country
-FROM supplier_profiles
-ORDER BY country
-`),
-
-pool.query(`
-SELECT DISTINCT UNNEST(capabilities) AS capability
-FROM supplier_profiles
-WHERE capabilities IS NOT NULL
-ORDER BY capability
-`),
+pool.query(`SELECT DISTINCT country FROM supplier_profiles ORDER BY country`),
 
 pool.query(`
 SELECT capability, COUNT(*) AS total
-FROM supplier_profiles,
-UNNEST(capabilities) AS capability
+FROM supplier_profiles, UNNEST(capabilities) AS capability
 WHERE sector = 'industrial'
 GROUP BY capability
 ORDER BY total DESC
@@ -106,8 +38,7 @@ LIMIT 6
 
 pool.query(`
 SELECT capability, COUNT(*) AS total
-FROM supplier_profiles,
-UNNEST(capabilities) AS capability
+FROM supplier_profiles, UNNEST(capabilities) AS capability
 WHERE sector != 'industrial'
 GROUP BY capability
 ORDER BY total DESC
@@ -115,13 +46,7 @@ LIMIT 6
 `),
 
 pool.query(`
-SELECT
-abn,
-abn_name,
-domain,
-state,
-postcode,
-capabilities,
+SELECT abn,abn_name,domain,state,postcode,capabilities,
 array_length(capabilities,1) AS capability_count
 FROM supplier_profiles
 WHERE capabilities IS NOT NULL
@@ -130,124 +55,24 @@ LIMIT 6
 `),
 
 pool.query(`
-SELECT
-abn,
-abn_name,
-domain,
-state,
-postcode
+SELECT abn,abn_name,domain,state,postcode
 FROM supplier_profiles
 WHERE last_crawled >= NOW() - INTERVAL '24 hours'
 ORDER BY last_crawled DESC
 LIMIT 6
 `)
+
 ])
+
+/* ---------------- FORMAT ---------------- */
 
 const countries = countryResult.rows.map((r:any)=>r.country)
 
-const capabilities = capabilityResult.rows.map((r:any)=>
-r.capability.split(" ").map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")
-)
-
-const industrialCapabilities = industrialTrending.rows.map((r:any)=>
-r.capability.split(" ").map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")
-)
-
-const businessCapabilities = businessTrending.rows.map((r:any)=>
-r.capability.split(" ").map((w:string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ")
-)
+const industrialCapabilities = industrialTrending.rows.map((r:any)=>r.capability)
+const businessCapabilities = businessTrending.rows.map((r:any)=>r.capability)
 
 const featuredSuppliers = featuredSuppliersResult.rows
 const newSuppliers = newSuppliersResult.rows
-
-/* ---------------- RSS NEWS ---------------- */
-
-const parser = new Parser()
-
-const feeds = [
-"https://www.supplychaindive.com/feeds/news/",
-"https://www.logisticsmgmt.com/rss/all",
-"https://www.dcvelocity.com/rss",
-"https://www.supplychainbrain.com/rss/articles",
-"https://www.supplychain247.com/rss",
-"https://www.inboundlogistics.com/rss",
-"https://www.sdcexec.com/rss",
-"https://www.logisticsviewpoints.com/feed/",
-"https://www.joc.com/rss.xml",
-"https://www.maritime-executive.com/rss.xml",
-"https://gcaptain.com/feed/",
-"https://www.freightwaves.com/rss",
-"https://www.freightwaves.com/news/feed",
-"https://www.industryweek.com/rss",
-"https://www.manufacturing.net/rss",
-"https://www.reuters.com/business/rss",
-"https://www.ft.com/global-economy?format=rss",
-"https://www.afr.com/rss",
-"https://www.abc.net.au/news/feed/51120/rss.xml",
-"https://www.bom.gov.au/rss/warnings.xml"
-]
-
-const rssResults = await Promise.allSettled(
-feeds.map(url => parser.parseURL(url))
-)
-
-let news:any[] = []
-
-rssResults.forEach(result=>{
-
-if(result.status !== "fulfilled") return
-
-const feed = result.value
-
-news.push(
-
-...feed.items.slice(0,3).map((item:any)=>{
-
-const text = `${item.title ?? ""} ${item.contentSnippet ?? ""}`.toLowerCase()
-
-let risk = 0
-
-if(text.includes("strike")) risk += 30
-if(text.includes("shutdown")) risk += 35
-if(text.includes("shortage")) risk += 25
-if(text.includes("delay")) risk += 20
-if(text.includes("disruption")) risk += 30
-if(text.includes("conflict")) risk += 35
-
-risk = Math.max(0,Math.min(100,risk))
-
-let riskClass="text-green-600"
-let riskBorder="border-green-500"
-let riskLevel="LOW"
-
-if(risk>=70){
-riskClass="text-red-600"
-riskBorder="border-red-500"
-riskLevel="HIGH"
-}
-else if(risk>=40){
-riskClass="text-orange-500"
-riskBorder="border-orange-400"
-riskLevel="MEDIUM"
-}
-
-return{
-title:item.title,
-link:item.link,
-pubDate:item.pubDate,
-risk_level:riskLevel,
-risk_class:riskClass,
-risk_border:riskBorder
-}
-
-})
-
-)
-
-})
-
-news = news.filter((v,i,a)=>a.findIndex(t=>t.title===v.title)===i)
-news = news.slice(0,6)
 
 /* ---------------- PAGE ---------------- */
 
@@ -268,7 +93,7 @@ backgroundPosition:"center"
 
 <div className="absolute inset-0 bg-black/60"></div>
 
-<div className="relative z-10 w-full max-w-5xl px-6">
+<div className="relative z-10 w-full px-6">
 
 <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
 Discover Verified Industrial Suppliers
@@ -278,7 +103,25 @@ Discover Verified Industrial Suppliers
 AI-powered supplier discovery with real-time supply chain intelligence.
 </p>
 
-<SearchBar countries={countries} capabilities={capabilities}/>
+<SearchBar countries={countries}/>
+
+{/* POPULAR CAPS */}
+
+<div className="mt-6 flex flex-wrap justify-center gap-3">
+
+{industrialCapabilities.slice(0,5).map((cap: string)=>(
+
+<a
+key={cap}
+href={`/search?capability=${encodeURIComponent(cap)}`}
+className="px-3 py-1 bg-white border rounded-full text-sm hover:bg-gray-50 shadow-sm"
+>
+{cap}
+</a>
+
+))}
+
+</div>
 
 </div>
 
@@ -290,24 +133,18 @@ AI-powered supplier discovery with real-time supply chain intelligence.
 
 <div className="grid md:grid-cols-2 gap-8">
 
-<div className="bg-white rounded-xl shadow border p-8 text-center">
+<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
 
-<h3 className="font-semibold mb-2">
-⚙ Trending Industrial Capabilities
-</h3>
-
-<p className="text-xs text-gray-500 mb-4">
-Most searched manufacturing capabilities
-</p>
+<h3 className="font-semibold mb-2">⚙ Trending Industrial</h3>
 
 <div className="flex flex-wrap justify-center gap-2">
 
-{industrialCapabilities.map((cap,i)=>(
+{industrialCapabilities.map((cap: string)=>(
 
 <a
-key={i}
+key={cap}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow transition"
+className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
 >
 {cap}
 </a>
@@ -318,24 +155,18 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:sha
 
 </div>
 
-<div className="bg-white rounded-xl shadow border p-8 text-center">
+<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
 
-<h3 className="font-semibold mb-2">
-💼 Trending Business Services
-</h3>
-
-<p className="text-xs text-gray-500 mb-4">
-Popular professional services suppliers
-</p>
+<h3 className="font-semibold mb-2">💼 Business Services</h3>
 
 <div className="flex flex-wrap justify-center gap-2">
 
-{businessCapabilities.map((cap,i)=>(
+{businessCapabilities.map((cap: string)=>(
 
 <a
-key={i}
+key={cap}
 href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow transition"
+className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
 >
 {cap}
 </a>
@@ -350,7 +181,7 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:sha
 
 </section>
 
-{/* FEATURED SUPPLIERS */}
+{/* FEATURED */}
 
 <section className="max-w-6xl mx-auto py-14 px-6">
 
@@ -360,49 +191,36 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:sha
 
 <div className="grid md:grid-cols-2 gap-6">
 
-{featuredSuppliers.map((supplier:any)=>(
+{featuredSuppliers.map((s:any)=>(
 
-<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border hover:shadow-lg transition">
+<div
+key={s.abn}
+className="flex items-center gap-4 p-5 bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition"
+>
 
-<div className="w-10 h-10 relative">
+<div className="w-10 h-10">
 
-{supplier.domain ? (
-
+{s.domain ? (
 <Image
-src={`https://logo.clearbit.com/${supplier.domain}`}
-alt={supplier.abn_name}
+src={`https://logo.clearbit.com/${s.domain}`}
+alt={s.abn_name}
 width={40}
 height={40}
-className="rounded border object-contain"
 />
-
 ) : (
-
-<div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded border text-sm font-semibold">
-{supplier.abn_name?.charAt(0)}
+<div className="w-10 h-10 bg-gray-200 flex items-center justify-center rounded">
+{s.abn_name?.charAt(0)}
 </div>
-
 )}
 
 </div>
 
 <div className="flex-1">
-
-<div className="font-semibold">
-{supplier.abn_name}
+<div className="font-semibold text-gray-900">{s.abn_name}</div>
+<div className="text-xs text-gray-500">{s.state} {s.postcode}</div>
 </div>
 
-<div className="text-xs text-gray-500">
-{supplier.state} {supplier.postcode}
-</div>
-
-<div className="text-xs text-gray-400">
-{supplier.capability_count} capabilities
-</div>
-
-</div>
-
-<a href={`/suppliers/${supplier.abn}`} className="text-blue-600 text-sm hover:underline">
+<a href={`/suppliers/${s.abn}`} className="text-blue-600 text-sm">
 View →
 </a>
 
@@ -414,80 +232,33 @@ View →
 
 </section>
 
-{/* NEW SUPPLIERS */}
+{/* NEW */}
 
 <section className="max-w-6xl mx-auto py-14 px-6">
 
 <h2 className="text-2xl font-bold mb-8 text-center">
-🆕 New Suppliers Discovered
+🆕 New Suppliers
 </h2>
 
 <div className="grid md:grid-cols-2 gap-6">
 
-{newSuppliers.map((supplier:any)=>(
+{newSuppliers.map((s:any)=>(
 
-<div key={supplier.abn} className="flex items-center gap-4 p-5 bg-white rounded-xl shadow border hover:shadow-lg transition">
+<div
+key={s.abn}
+className="flex items-center gap-4 p-5 bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition"
+>
 
 <div className="flex-1">
-
-<div className="font-semibold">
-{supplier.abn_name}
+<div className="font-semibold">{s.abn_name}</div>
+<div className="text-xs text-gray-500">{s.state} {s.postcode}</div>
 </div>
 
-<div className="text-xs text-gray-500">
-{supplier.state} {supplier.postcode}
-</div>
-
-</div>
-
-<a href={`/suppliers/${supplier.abn}`} className="text-blue-600 text-sm hover:underline">
+<a href={`/suppliers/${s.abn}`} className="text-blue-600 text-sm">
 View →
 </a>
 
 </div>
-
-))}
-
-</div>
-
-</section>
-
-{/* NEWS */}
-
-<section className="max-w-6xl mx-auto py-14 px-6">
-
-<h2 className="text-2xl font-bold mb-10 text-center">
-Live Supply Chain Intelligence
-</h2>
-
-<div className="grid md:grid-cols-2 gap-8">
-
-{news.map((item,i)=>(
-
-<a
-key={i}
-href={item.link}
-target="_blank"
-className={`flex gap-4 p-6 bg-white rounded-xl shadow hover:shadow-lg transition border-l-4 ${item.risk_border}`}
->
-
-<div>
-
-<p className={`text-xs font-semibold ${item.risk_class}`}>
-{item.risk_level} RISK
-</p>
-
-<h3 className="font-semibold text-base mt-1">
-{item.title}
-</h3>
-
-<p className="text-xs text-gray-400 mt-2">
-{new Date(item.pubDate).toLocaleDateString()}
-</p>
-
-</div>
-
-</a>
 
 ))}
 
@@ -502,5 +273,4 @@ className={`flex gap-4 p-6 bg-white rounded-xl shadow hover:shadow-lg transition
 </main>
 
 )
-
 }
