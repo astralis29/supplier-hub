@@ -4,16 +4,12 @@ import SearchSection from "./components/SearchSection"
 import { getRSSData } from "@/lib/rss"
 import { Pool } from "pg"
 
-/* ---------------- DB ---------------- */
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production"
     ? { rejectUnauthorized: false }
     : false
 })
-
-/* ---------------- TAG HELPER ---------------- */
 
 function extractTag(title: string) {
   const t = title.toLowerCase()
@@ -26,8 +22,6 @@ function extractTag(title: string) {
 
   return "General"
 }
-
-/* ---------------- HOME ---------------- */
 
 export default async function Home() {
 
@@ -66,8 +60,6 @@ export default async function Home() {
     console.error("DB ERROR:", err)
   }
 
-  /* ---------------- RSS ---------------- */
-
   let rssItems: any[] = []
 
   try {
@@ -76,43 +68,13 @@ export default async function Home() {
     console.error("RSS fetch failed", err)
   }
 
-  /* ---------------- FORMAT ---------------- */
-
   const countries = countryResult?.rows?.map((r: any) => r.country) || []
   const industrialCapabilities = industrialTrending?.rows?.map((r: any) => r.capability) || []
   const businessCapabilities = businessTrending?.rows?.map((r: any) => r.capability) || []
 
-  const topSignals = rssItems
-    .filter((i: any) => i.score >= 3)
-    .sort((a: any, b: any) => b.score - a.score)
-    .slice(0, 5)
-
-  /* ---------------- PAGE ---------------- */
-
   return (
 
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
-
-      {/* 📡 LIVE RSS TICKER */}
-
-      <div className="w-full bg-black text-white overflow-hidden border-b border-gray-800">
-        <div className="whitespace-nowrap animate-scroll flex gap-10 py-2 px-4 text-sm">
-
-          {[...rssItems.slice(0, 15), ...rssItems.slice(0, 15)].map((item: any, i: number) => (
-            <a
-              key={i}
-              href={item.link}
-              target="_blank"
-              className="flex items-center gap-2 hover:text-gray-300 transition"
-            >
-              <span className="text-red-400">●</span>
-              <span className="font-medium">{item.title}</span>
-              <span className="text-gray-400 text-xs">({item.source})</span>
-            </a>
-          ))}
-
-        </div>
-      </div>
 
       {/* HERO */}
 
@@ -157,6 +119,27 @@ export default async function Home() {
 
       </section>
 
+      {/* 📡 LIVE RSS TICKER (MOVED HERE) */}
+
+      <div className="w-full bg-black text-white overflow-hidden border-b border-gray-800">
+        <div className="whitespace-nowrap animate-scroll flex gap-10 py-2 px-4 text-sm">
+
+          {[...rssItems.slice(0, 15), ...rssItems.slice(0, 15)].map((item: any, i: number) => (
+            <a
+              key={i}
+              href={item.link}
+              target="_blank"
+              className="flex items-center gap-2 hover:text-gray-300 transition"
+            >
+              <span className="text-red-400">●</span>
+              <span className="font-medium">{item.title}</span>
+              <span className="text-gray-400 text-xs">({item.source})</span>
+            </a>
+          ))}
+
+        </div>
+      </div>
+
       {/* 🚨 BREAKING SIGNAL */}
 
       {rssItems
@@ -190,63 +173,9 @@ export default async function Home() {
 
         ))}
 
-      {/* 🧠 TOP SIGNALS */}
-
-      <section className="max-w-7xl mx-auto py-14 px-6">
-
-        <h3 className="font-semibold mb-6 text-center">
-          🧠 Top Supply Chain Signals
-        </h3>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-          {topSignals.map((item: any, i: number) => (
-
-            <a
-              key={i}
-              href={item.link}
-              target="_blank"
-              className="group bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-            >
-
-              <div className="flex justify-between items-start mb-3">
-
-                <span className={`text-xs px-2 py-1 rounded font-medium ${
-                  item.score >= 5
-                    ? "bg-red-100 text-red-600"
-                    : item.score >= 3
-                    ? "bg-orange-100 text-orange-600"
-                    : "bg-gray-100 text-gray-500"
-                }`}>
-                  {item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
-                </span>
-
-                <span className="text-[10px] text-gray-400 uppercase">
-                  {item.category || extractTag(item.title)}
-                </span>
-
-              </div>
-
-              <div className="text-sm font-semibold text-gray-900 leading-snug mb-4 group-hover:underline">
-                {item.title}
-              </div>
-
-              <div className="text-xs text-gray-500 flex justify-between items-center">
-                <span>{item.source}</span>
-                {item.hoursAgo !== null && <span>{item.hoursAgo}h ago</span>}
-              </div>
-
-            </a>
-
-          ))}
-
-        </div>
-
-      </section>
-
       {/* 🧬 THEMES */}
 
-      <section className="max-w-7xl mx-auto px-6 pb-16">
+      <section className="max-w-7xl mx-auto px-6 pb-16 pt-14">
 
         <h3 className="text-center font-semibold mb-8">
           🧬 Market Intelligence by Sector
