@@ -85,12 +85,9 @@ let rssItems:any[] = []
 
 try {
 
-  const base =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-
-  const res = await fetch(`${base}/api/rss`, {
-    next: { revalidate: 300 }
-  })
+const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/rss`, {
+  next: { revalidate: 300 }
+})
 
   const data = await res.json()
   rssItems = data.items || []
