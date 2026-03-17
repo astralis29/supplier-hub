@@ -183,7 +183,14 @@ export default async function Home() {
 
         <div className="grid md:grid-cols-3 gap-6">
 
-          {["Steel", "Mining", "Logistics"].map((theme) => {
+          {["Steel", "Mining", "Logistics", "Defence", "Freight", "Derailment","Supply Chain", "Procurement", "Sourcing", "Logistics", "Distribution", "Inventory", "Warehousing", "Fulfillment", "Operations",
+"Demand Planning", "Supply Planning", "Capacity", "Lead Time", "Throughput", "Cycle Time" ,"Freight", "Shipping", "Transportation", "Cargo", "Port Congestion", "Last Mile Delivery", "Fleet Management",
+"Air Freight", "Ocean Freight", "Rail Logistics", "Trucking", "Cold Chain", "Reverse Logistics", "Manufacturing", "Fabrication", "CNC Machining", "Injection Molding", "Assembly", "Production", "Automation",
+"Industrial Equipment", "Tooling", "Maintenance", "Engineering", "Quality Control", "Mining", "Minerals", "Metals", "Steel", "Aluminium", "Copper", "Lithium", "Oil", "Gas", "Energy",
+"Resources", "Extraction", "Refining", "Commodities", "Stock Levels", "Inventory Management", "Safety Stock", "Replenishment", "Storage",
+"Distribution Center", "Picking", "Packing", "Order Fulfillment", "SKU", "Stockouts", "Overstock", "Disruption", "Shortage", "Delay", "Bottleneck", "Backlog", "Volatility", "Price Spike",
+"Capacity Constraints", "Strike", "Shutdown", "Sanctions", "Trade Restrictions", "Geopolitical Risk", "Supply Shock", "Derailment", "Imports", "Exports", "Tariffs", "Trade Routes", "Customs", "Duties",
+"Trade Agreements", "Border Delays", "Global Supply Chain", "Supplier", "Vendor", "Contract", "Tender", "Procurement Deal", "Partnership", "Expansion", "Investment", "Acquisition", "Merger",].map((theme) => {
 
             const filtered = rssItems
               .filter((i: any) => (i.category || extractTag(i.title)) === theme)
