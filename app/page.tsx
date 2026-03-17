@@ -1,8 +1,8 @@
-export const revalidate = 600
+export const revalidate = 300
 
 import { Pool } from "pg"
-import Image from "next/image"
 import SearchBar from "./components/SearchBar"
+import LiveResults from "./components/LiveResults"
 
 /* ---------------- DB ---------------- */
 
@@ -11,68 +11,100 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 })
 
-/* ---------------- HOME PAGE ---------------- */
+/* ---------------- TAG HELPER ---------------- */
+
+function extractTag(title:string){
+
+const t = title.toLowerCase()
+
+if(t.includes("steel")) return "Steel"
+if(t.includes("mining")) return "Mining"
+if(t.includes("logistics")) return "Logistics"
+if(t.includes("construction")) return "Construction"
+if(t.includes("energy")) return "Energy"
+
+return "General"
+}
+
+/* ---------------- CLIENT WRAPPER ---------------- */
+
+function SearchSection({ countries }: { countries: string[] }) {
+  "use client"
+
+  const { useState } = require("react")
+  const [liveQuery, setLiveQuery] = useState("")
+
+  return (
+    <>
+      <SearchBar
+        countries={countries}
+        onQueryChange={setLiveQuery}
+      />
+
+      <LiveResults query={liveQuery} />
+    </>
+  )
+}
+
+/* ---------------- HOME ---------------- */
 
 export default async function Home() {
 
-/* ---------------- DB ---------------- */
+/* ---------------- DATA ---------------- */
 
 const [
   countryResult,
   industrialTrending,
-  businessTrending,
-  featuredSuppliersResult,
-  newSuppliersResult
+  businessTrending
 ] = await Promise.all([
 
-pool.query(`SELECT DISTINCT country FROM supplier_profiles ORDER BY country`),
+  pool.query(`SELECT DISTINCT country FROM supplier_profiles ORDER BY country`),
 
-pool.query(`
-SELECT capability, COUNT(*) AS total
-FROM supplier_profiles, UNNEST(capabilities) AS capability
-WHERE sector = 'industrial'
-GROUP BY capability
-ORDER BY total DESC
-LIMIT 6
-`),
+  pool.query(`
+    SELECT capability, COUNT(*) AS total
+    FROM supplier_profiles, UNNEST(capabilities) AS capability
+    WHERE sector = 'industrial'
+    GROUP BY capability
+    ORDER BY total DESC
+    LIMIT 6
+  `),
 
-pool.query(`
-SELECT capability, COUNT(*) AS total
-FROM supplier_profiles, UNNEST(capabilities) AS capability
-WHERE sector != 'industrial'
-GROUP BY capability
-ORDER BY total DESC
-LIMIT 6
-`),
-
-pool.query(`
-SELECT abn,abn_name,domain,state,postcode,capabilities,
-array_length(capabilities,1) AS capability_count
-FROM supplier_profiles
-WHERE capabilities IS NOT NULL
-ORDER BY capability_count DESC
-LIMIT 6
-`),
-
-pool.query(`
-SELECT abn,abn_name,domain,state,postcode
-FROM supplier_profiles
-WHERE last_crawled >= NOW() - INTERVAL '24 hours'
-ORDER BY last_crawled DESC
-LIMIT 6
-`)
-
+  pool.query(`
+    SELECT capability, COUNT(*) AS total
+    FROM supplier_profiles, UNNEST(capabilities) AS capability
+    WHERE sector != 'industrial'
+    GROUP BY capability
+    ORDER BY total DESC
+    LIMIT 6
+  `)
 ])
+
+/* ---------------- RSS FETCH (FIXED) ---------------- */
+
+let rssItems:any[] = []
+
+try {
+
+  const base =
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+
+  const res = await fetch(`${base}/api/rss`, {
+    next: { revalidate: 300 }
+  })
+
+  const data = await res.json()
+  rssItems = data.items || []
+
+} catch (err) {
+  console.error("RSS fetch failed", err)
+}
 
 /* ---------------- FORMAT ---------------- */
 
-const countries = countryResult.rows.map((r:any)=>r.country)
+const countries = countryResult?.rows?.map((r:any)=>r.country) || []
 
-const industrialCapabilities = industrialTrending.rows.map((r:any)=>r.capability)
-const businessCapabilities = businessTrending.rows.map((r:any)=>r.capability)
-
-const featuredSuppliers = featuredSuppliersResult.rows
-const newSuppliers = newSuppliersResult.rows
+const industrialCapabilities = industrialTrending?.rows?.map((r:any)=>r.capability) || []
+const businessCapabilities = businessTrending?.rows?.map((r:any)=>r.capability) || []
 
 /* ---------------- PAGE ---------------- */
 
@@ -96,16 +128,14 @@ backgroundPosition:"center"
 <div className="relative z-10 w-full px-6">
 
 <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-Discover Verified Industrial Suppliers
+Supply Chain Intelligence
 </h1>
 
 <p className="text-lg text-gray-200 mb-10">
-AI-powered supplier discovery with real-time supply chain intelligence.
+Real-time supplier discovery powered by live market signals.
 </p>
 
-<SearchBar countries={countries}/>
-
-{/* POPULAR CAPS */}
+<SearchSection countries={countries} />
 
 <div className="mt-6 flex flex-wrap justify-center gap-3">
 
@@ -126,6 +156,36 @@ className="px-3 py-1 bg-white border rounded-full text-sm hover:bg-gray-50 shado
 </div>
 
 </section>
+
+{/* 🚨 BREAKING SIGNAL */}
+
+{rssItems.filter((i:any)=>i.isBreaking).slice(0,1).map((item:any,i:number)=>(
+
+<section key={i} className="max-w-5xl mx-auto px-6 mt-10">
+
+<a
+href={item.link}
+target="_blank"
+className="block bg-red-600 text-white rounded-xl p-6 shadow-lg hover:bg-red-700 transition"
+>
+
+<div className="text-xs uppercase tracking-wide opacity-80 mb-2">
+🚨 Breaking Supply Chain Signal
+</div>
+
+<div className="text-lg font-semibold leading-snug">
+{item.title}
+</div>
+
+<div className="text-xs mt-2 opacity-80">
+{item.source} • {item.hoursAgo ?? "recent"}h ago
+</div>
+
+</a>
+
+</section>
+
+))}
 
 {/* TRENDING */}
 
@@ -181,86 +241,112 @@ className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:sha
 
 </section>
 
-{/* FEATURED */}
+{/* 🧠 INTELLIGENCE FEED */}
 
-<section className="max-w-6xl mx-auto py-14 px-6">
+<section className="max-w-7xl mx-auto py-14 px-6">
 
-<h2 className="text-2xl font-bold mb-8 text-center">
-⭐ Featured Suppliers
-</h2>
+<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 
-<div className="grid md:grid-cols-2 gap-6">
+<h3 className="font-semibold mb-6 text-center">
+🧠 Live Supply Chain Intelligence
+</h3>
 
-{featuredSuppliers.map((s:any)=>(
+<div className="space-y-3">
 
-<div
-key={s.abn}
-className="flex items-center gap-4 p-5 bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition"
+{rssItems.map((item:any, i:number)=>(
+
+<a
+key={i}
+href={item.link}
+target="_blank"
+className="flex justify-between items-start gap-4 p-4 rounded-lg border hover:bg-gray-50 transition"
 >
 
-<div className="w-10 h-10">
-
-{s.domain ? (
-<Image
-src={`https://logo.clearbit.com/${s.domain}`}
-alt={s.abn_name}
-width={40}
-height={40}
-/>
-) : (
-<div className="w-10 h-10 bg-gray-200 flex items-center justify-center rounded">
-{s.abn_name?.charAt(0)}
-</div>
-)}
-
-</div>
-
 <div className="flex-1">
-<div className="font-semibold text-gray-900">{s.abn_name}</div>
-<div className="text-xs text-gray-500">{s.state} {s.postcode}</div>
+
+<div className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
+{item.title}
 </div>
 
-<a href={`/suppliers/${s.abn}`} className="text-blue-600 text-sm">
-View →
+<div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+<span>{item.source}</span>
+
+{item.hoursAgo !== null && (
+<>
+<span>•</span>
+<span>{item.hoursAgo}h ago</span>
+</>
+)}
+</div>
+
+</div>
+
+<div className="flex flex-col items-end gap-2">
+
+<div className={`text-xs px-2 py-1 rounded ${
+item.score >= 5
+? "bg-red-100 text-red-600"
+: item.score >= 3
+? "bg-orange-100 text-orange-600"
+: "bg-gray-100 text-gray-500"
+}`}>
+{item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
+</div>
+
+<div className="text-[10px] text-gray-400 uppercase">
+{item.category || extractTag(item.title)}
+</div>
+
+</div>
+
 </a>
 
-</div>
-
 ))}
+
+</div>
 
 </div>
 
 </section>
 
-{/* NEW */}
+{/* 🧬 THEMES */}
 
-<section className="max-w-6xl mx-auto py-14 px-6">
+<section className="max-w-7xl mx-auto px-6 pb-10">
 
-<h2 className="text-2xl font-bold mb-8 text-center">
-🆕 New Suppliers
-</h2>
+<div className="grid md:grid-cols-3 gap-6">
 
-<div className="grid md:grid-cols-2 gap-6">
+{["Steel","Mining","Logistics"].map((theme)=>{
 
-{newSuppliers.map((s:any)=>(
+const filtered = rssItems
+  .filter((i:any)=> (i.category || extractTag(i.title)) === theme)
+  .slice(0,3)
 
-<div
-key={s.abn}
-className="flex items-center gap-4 p-5 bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition"
->
+if(filtered.length === 0) return null
 
-<div className="flex-1">
-<div className="font-semibold">{s.abn_name}</div>
-<div className="text-xs text-gray-500">{s.state} {s.postcode}</div>
-</div>
+return(
 
-<a href={`/suppliers/${s.abn}`} className="text-blue-600 text-sm">
-View →
+<div key={theme} className="bg-white border rounded-xl p-4">
+
+<h4 className="text-sm font-semibold mb-3">{theme}</h4>
+
+<div className="space-y-2">
+
+{filtered.map((item:any,i:number)=>(
+<a key={i}
+href={item.link}
+target="_blank"
+className="block text-xs hover:underline line-clamp-2">
+{item.title}
 </a>
+))}
 
 </div>
 
-))}
+</div>
+
+)
+
+})}
 
 </div>
 
