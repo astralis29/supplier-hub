@@ -25,6 +25,12 @@ const FEEDS = [
   "https://www.mining.com/feed/"
 ]
 
+/* ---------------- CACHE ---------------- */
+
+let CACHE: RSSItem[] = []
+let LAST_FETCH = 0
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 /* ---------------- KEYWORDS ---------------- */
 
 const KEYWORDS = [
@@ -45,7 +51,9 @@ function scoreArticle(title: string): number {
   let score = 0
 
   for (const k of KEYWORDS) {
-    if (lower.includes(k.word)) score += k.weight
+    if (lower.includes(k.word)) {
+      score += k.weight
+    }
   }
 
   if (lower.includes("australia")) score += 1
@@ -71,8 +79,8 @@ function getCategory(title: string): string {
   return "General"
 }
 
-function normalizeTitle(title: string): string {
-  return title.toLowerCase().replace(/[^\w\s]/g, "").trim()
+function normalize(str: string): string {
+  return str.toLowerCase().replace(/[^\w\s]/g, "").trim()
 }
 
 /* ---------------- FETCH WITH TIMEOUT ---------------- */
@@ -82,7 +90,7 @@ async function fetchFeed(url: string) {
     return await Promise.race([
       parser.parseURL(url),
       new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), 4000)
+        setTimeout(() => resolve(null), 3500)
       )
     ])
   } catch {
@@ -93,18 +101,27 @@ async function fetchFeed(url: string) {
 /* ---------------- MAIN FUNCTION ---------------- */
 
 export async function getRSSData(): Promise<RSSItem[]> {
+
+  /* ✅ CACHE HIT */
+  if (Date.now() - LAST_FETCH < CACHE_TTL && CACHE.length > 0) {
+    return CACHE
+  }
+
   try {
+
     const feeds = await Promise.all(FEEDS.map(fetchFeed))
 
     let items: RSSItem[] = feeds
       .filter((feed): feed is NonNullable<typeof feed> => Boolean(feed))
       .flatMap(feed =>
         feed.items.map(item => {
+
           const title = item.title || ""
           const hrs = hoursAgo(item.pubDate)
           const baseScore = scoreArticle(title)
 
           const recencyBoost =
+            hrs !== null && hrs < 6 ? 3 :
             hrs !== null && hrs < 12 ? 2 :
             hrs !== null && hrs < 24 ? 1 : 0
 
@@ -114,21 +131,21 @@ export async function getRSSData(): Promise<RSSItem[]> {
             title,
             link: item.link || "",
             pubDate: item.pubDate || "",
-            source: feed.title?.replace("RSS Feed", "") || "News",
+            source: (feed.title || "News").replace("RSS Feed", "").trim(),
             score: finalScore,
             hoursAgo: hrs,
             category: getCategory(title),
-            isBreaking: finalScore >= 5
+            isBreaking: finalScore >= 6
           }
         })
       )
 
-    /* ---------------- DEDUPE ---------------- */
+    /* ---------------- DEDUPE (BETTER) ---------------- */
 
     const seen = new Set<string>()
 
     items = items.filter(item => {
-      const key = normalizeTitle(item.title)
+      const key = normalize(item.title) + item.link
       if (seen.has(key)) return false
       seen.add(key)
       return true
@@ -141,10 +158,18 @@ export async function getRSSData(): Promise<RSSItem[]> {
       return (a.hoursAgo ?? 999) - (b.hoursAgo ?? 999)
     })
 
-    return items.slice(0, 25)
+    const finalItems = items.slice(0, 25)
+
+    /* ✅ SAVE CACHE */
+    CACHE = finalItems
+    LAST_FETCH = Date.now()
+
+    return finalItems
 
   } catch (err) {
     console.error("RSS ERROR:", err)
-    return []
+
+    /* fallback to cache if available */
+    return CACHE.length > 0 ? CACHE : []
   }
 }
