@@ -31,8 +31,6 @@ function extractTag(title: string) {
 
 export default async function Home() {
 
-  /* ---------------- SAFE DATA FETCH ---------------- */
-
   let countryResult: any = { rows: [] }
   let industrialTrending: any = { rows: [] }
   let businessTrending: any = { rows: [] }
@@ -81,18 +79,40 @@ export default async function Home() {
   /* ---------------- FORMAT ---------------- */
 
   const countries = countryResult?.rows?.map((r: any) => r.country) || []
+  const industrialCapabilities = industrialTrending?.rows?.map((r: any) => r.capability) || []
+  const businessCapabilities = businessTrending?.rows?.map((r: any) => r.capability) || []
 
-  const industrialCapabilities =
-    industrialTrending?.rows?.map((r: any) => r.capability) || []
-
-  const businessCapabilities =
-    businessTrending?.rows?.map((r: any) => r.capability) || []
+  const topSignals = rssItems
+    .filter((i: any) => i.score >= 3)
+    .sort((a: any, b: any) => b.score - a.score)
+    .slice(0, 5)
 
   /* ---------------- PAGE ---------------- */
 
   return (
 
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
+
+      {/* 📡 LIVE RSS TICKER */}
+
+      <div className="w-full bg-black text-white overflow-hidden border-b border-gray-800">
+        <div className="whitespace-nowrap animate-scroll flex gap-10 py-2 px-4 text-sm">
+
+          {[...rssItems.slice(0, 15), ...rssItems.slice(0, 15)].map((item: any, i: number) => (
+            <a
+              key={i}
+              href={item.link}
+              target="_blank"
+              className="flex items-center gap-2 hover:text-gray-300 transition"
+            >
+              <span className="text-red-400">●</span>
+              <span className="font-medium">{item.title}</span>
+              <span className="text-gray-400 text-xs">({item.source})</span>
+            </a>
+          ))}
+
+        </div>
+      </div>
 
       {/* HERO */}
 
@@ -117,7 +137,6 @@ export default async function Home() {
             Real-time supplier discovery powered by live market signals.
           </p>
 
-          {/* ✅ CLEAN CLIENT COMPONENT */}
           <SearchSection countries={countries} />
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -171,119 +190,55 @@ export default async function Home() {
 
         ))}
 
-      {/* TRENDING */}
+      {/* 🧠 TOP SIGNALS */}
 
       <section className="max-w-7xl mx-auto py-14 px-6">
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <h3 className="font-semibold mb-6 text-center">
+          🧠 Top Supply Chain Signals
+        </h3>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <h3 className="font-semibold mb-2">⚙ Trending Industrial</h3>
+          {topSignals.map((item: any, i: number) => (
 
-            <div className="flex flex-wrap justify-center gap-2">
+            <a
+              key={i}
+              href={item.link}
+              target="_blank"
+              className="group bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+            >
 
-              {industrialCapabilities.map((cap: string) => (
-                <a
-                  key={cap}
-                  href={`/search?capability=${encodeURIComponent(cap)}`}
-                  className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
-                >
-                  {cap}
-                </a>
-              ))}
+              <div className="flex justify-between items-start mb-3">
 
-            </div>
+                <span className={`text-xs px-2 py-1 rounded font-medium ${
+                  item.score >= 5
+                    ? "bg-red-100 text-red-600"
+                    : item.score >= 3
+                    ? "bg-orange-100 text-orange-600"
+                    : "bg-gray-100 text-gray-500"
+                }`}>
+                  {item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
+                </span>
 
-          </div>
+                <span className="text-[10px] text-gray-400 uppercase">
+                  {item.category || extractTag(item.title)}
+                </span>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+              </div>
 
-            <h3 className="font-semibold mb-2">💼 Business Services</h3>
+              <div className="text-sm font-semibold text-gray-900 leading-snug mb-4 group-hover:underline">
+                {item.title}
+              </div>
 
-            <div className="flex flex-wrap justify-center gap-2">
+              <div className="text-xs text-gray-500 flex justify-between items-center">
+                <span>{item.source}</span>
+                {item.hoursAgo !== null && <span>{item.hoursAgo}h ago</span>}
+              </div>
 
-              {businessCapabilities.map((cap: string) => (
-                <a
-                  key={cap}
-                  href={`/search?capability=${encodeURIComponent(cap)}`}
-                  className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
-                >
-                  {cap}
-                </a>
-              ))}
+            </a>
 
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* 🧠 INTELLIGENCE FEED */}
-
-      <section className="max-w-7xl mx-auto py-14 px-6">
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-
-          <h3 className="font-semibold mb-6 text-center">
-            🧠 Live Supply Chain Intelligence
-          </h3>
-
-          <div className="space-y-3">
-
-            {rssItems.map((item: any, i: number) => (
-
-              <a
-                key={i}
-                href={item.link}
-                target="_blank"
-                className="flex justify-between items-start gap-4 p-4 rounded-lg border hover:bg-gray-50 transition"
-              >
-
-                <div className="flex-1">
-
-                  <div className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
-                    {item.title}
-                  </div>
-
-                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                    <span>{item.source}</span>
-
-                    {item.hoursAgo !== null && (
-                      <>
-                        <span>•</span>
-                        <span>{item.hoursAgo}h ago</span>
-                      </>
-                    )}
-                  </div>
-
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-
-                  <div className={`text-xs px-2 py-1 rounded ${
-                    item.score >= 5
-                      ? "bg-red-100 text-red-600"
-                      : item.score >= 3
-                      ? "bg-orange-100 text-orange-600"
-                      : "bg-gray-100 text-gray-500"
-                  }`}>
-                    {item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
-                  </div>
-
-                  <div className="text-[10px] text-gray-400 uppercase">
-                    {item.category || extractTag(item.title)}
-                  </div>
-
-                </div>
-
-              </a>
-
-            ))}
-
-          </div>
+          ))}
 
         </div>
 
@@ -291,7 +246,11 @@ export default async function Home() {
 
       {/* 🧬 THEMES */}
 
-      <section className="max-w-7xl mx-auto px-6 pb-10">
+      <section className="max-w-7xl mx-auto px-6 pb-16">
+
+        <h3 className="text-center font-semibold mb-8">
+          🧬 Market Intelligence by Sector
+        </h3>
 
         <div className="grid md:grid-cols-3 gap-6">
 
@@ -299,30 +258,57 @@ export default async function Home() {
 
             const filtered = rssItems
               .filter((i: any) => (i.category || extractTag(i.title)) === theme)
+              .sort((a: any, b: any) => b.score - a.score)
               .slice(0, 3)
 
             if (filtered.length === 0) return null
 
             return (
 
-              <div key={theme} className="bg-white border rounded-xl p-4">
+              <div key={theme} className="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition">
 
-                <h4 className="text-sm font-semibold mb-3">{theme}</h4>
+                <h4 className="text-sm font-semibold mb-4">
+                  {theme}
+                </h4>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
 
                   {filtered.map((item: any, i: number) => (
-                    <a
-                      key={i}
-                      href={item.link}
-                      target="_blank"
-                      className="block text-xs hover:underline line-clamp-2"
-                    >
-                      {item.title}
+
+                    <a key={i} href={item.link} target="_blank" className="block group">
+
+                      <div className="text-xs font-medium text-gray-800 group-hover:underline line-clamp-2">
+                        {item.title}
+                      </div>
+
+                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+
+                        <span>{item.source}</span>
+
+                        <span className={`px-1.5 py-0.5 rounded ${
+                          item.score >= 5
+                            ? "bg-red-100 text-red-600"
+                            : item.score >= 3
+                            ? "bg-orange-100 text-orange-600"
+                            : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
+                        </span>
+
+                      </div>
+
                     </a>
+
                   ))}
 
                 </div>
+
+                <a
+                  href={`/search?capability=${theme.toLowerCase()}`}
+                  className="block mt-4 text-xs text-blue-600 hover:underline"
+                >
+                  View suppliers →
+                </a>
 
               </div>
 
