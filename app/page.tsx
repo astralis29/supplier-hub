@@ -1,5 +1,6 @@
 export const revalidate = 300
 
+import { getRSSData } from "@/lib/rss"
 import { Pool } from "pg"
 import SearchBar from "./components/SearchBar"
 import LiveResults from "./components/LiveResults"
@@ -8,22 +9,23 @@ import LiveResults from "./components/LiveResults"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.NODE_ENV === "production"
+    ? { rejectUnauthorized: false }
+    : false
 })
 
 /* ---------------- TAG HELPER ---------------- */
 
-function extractTag(title:string){
+function extractTag(title: string) {
+  const t = title.toLowerCase()
 
-const t = title.toLowerCase()
+  if (t.includes("steel")) return "Steel"
+  if (t.includes("mining")) return "Mining"
+  if (t.includes("logistics")) return "Logistics"
+  if (t.includes("construction")) return "Construction"
+  if (t.includes("energy")) return "Energy"
 
-if(t.includes("steel")) return "Steel"
-if(t.includes("mining")) return "Mining"
-if(t.includes("logistics")) return "Logistics"
-if(t.includes("construction")) return "Construction"
-if(t.includes("energy")) return "Energy"
-
-return "General"
+  return "General"
 }
 
 /* ---------------- CLIENT WRAPPER ---------------- */
@@ -40,7 +42,6 @@ function SearchSection({ countries }: { countries: string[] }) {
         countries={countries}
         onQueryChange={setLiveQuery}
       />
-
       <LiveResults query={liveQuery} />
     </>
   )
@@ -50,310 +51,312 @@ function SearchSection({ countries }: { countries: string[] }) {
 
 export default async function Home() {
 
-/* ---------------- DATA ---------------- */
+  /* ---------------- SAFE DATA FETCH ---------------- */
 
-const [
-  countryResult,
-  industrialTrending,
-  businessTrending
-] = await Promise.all([
+  let countryResult: any = { rows: [] }
+  let industrialTrending: any = { rows: [] }
+  let businessTrending: any = { rows: [] }
 
-  pool.query(`SELECT DISTINCT country FROM supplier_profiles ORDER BY country`),
+  try {
+    const results = await Promise.all([
+      pool.query(`SELECT DISTINCT country FROM supplier_profiles ORDER BY country`),
 
-  pool.query(`
-    SELECT capability, COUNT(*) AS total
-    FROM supplier_profiles, UNNEST(capabilities) AS capability
-    WHERE sector = 'industrial'
-    GROUP BY capability
-    ORDER BY total DESC
-    LIMIT 6
-  `),
+      pool.query(`
+        SELECT capability, COUNT(*) AS total
+        FROM supplier_profiles, UNNEST(capabilities) AS capability
+        WHERE sector = 'industrial'
+        GROUP BY capability
+        ORDER BY total DESC
+        LIMIT 6
+      `),
 
-  pool.query(`
-    SELECT capability, COUNT(*) AS total
-    FROM supplier_profiles, UNNEST(capabilities) AS capability
-    WHERE sector != 'industrial'
-    GROUP BY capability
-    ORDER BY total DESC
-    LIMIT 6
-  `)
-])
+      pool.query(`
+        SELECT capability, COUNT(*) AS total
+        FROM supplier_profiles, UNNEST(capabilities) AS capability
+        WHERE sector != 'industrial'
+        GROUP BY capability
+        ORDER BY total DESC
+        LIMIT 6
+      `)
+    ])
 
-/* ---------------- RSS FETCH (FIXED) ---------------- */
+    countryResult = results[0]
+    industrialTrending = results[1]
+    businessTrending = results[2]
 
-let rssItems:any[] = []
+  } catch (err) {
+    console.error("DB ERROR:", err)
+  }
 
-try {
+  /* ---------------- RSS ---------------- */
 
-const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/rss`, {
-  next: { revalidate: 300 }
-})
+  let rssItems: any[] = []
 
-  const data = await res.json()
-  rssItems = data.items || []
+  try {
+    rssItems = await getRSSData()
+  } catch (err) {
+    console.error("RSS fetch failed", err)
+  }
 
-} catch (err) {
-  console.error("RSS fetch failed", err)
-}
+  /* ---------------- FORMAT ---------------- */
 
-/* ---------------- FORMAT ---------------- */
+  const countries = countryResult?.rows?.map((r: any) => r.country) || []
 
-const countries = countryResult?.rows?.map((r:any)=>r.country) || []
+  const industrialCapabilities =
+    industrialTrending?.rows?.map((r: any) => r.capability) || []
 
-const industrialCapabilities = industrialTrending?.rows?.map((r:any)=>r.capability) || []
-const businessCapabilities = businessTrending?.rows?.map((r:any)=>r.capability) || []
+  const businessCapabilities =
+    businessTrending?.rows?.map((r: any) => r.capability) || []
 
-/* ---------------- PAGE ---------------- */
+  /* ---------------- PAGE ---------------- */
 
-return(
+  return (
 
-<main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
+    <main className="min-h-screen bg-gradient-to-b from-white to-gray-100">
 
-{/* HERO */}
+      {/* HERO */}
 
-<section
-className="relative h-[65vh] flex items-center justify-center text-center"
-style={{
-backgroundImage:"url('/forest-bg.jpg')",
-backgroundSize:"cover",
-backgroundPosition:"center"
-}}
->
+      <section
+        className="relative h-[65vh] flex items-center justify-center text-center"
+        style={{
+          backgroundImage: "url('/forest-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}
+      >
 
-<div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
 
-<div className="relative z-10 w-full px-6">
+        <div className="relative z-10 w-full px-6">
 
-<h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-Supply Chain Intelligence
-</h1>
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            Supply Chain Intelligence
+          </h1>
 
-<p className="text-lg text-gray-200 mb-10">
-Real-time supplier discovery powered by live market signals.
-</p>
+          <p className="text-lg text-gray-200 mb-10">
+            Real-time supplier discovery powered by live market signals.
+          </p>
 
-<SearchSection countries={countries} />
+          <SearchSection countries={countries} />
 
-<div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
 
-{industrialCapabilities.slice(0,5).map((cap: string)=>(
+            {industrialCapabilities.slice(0, 5).map((cap: string) => (
+              <a
+                key={cap}
+                href={`/search?capability=${encodeURIComponent(cap)}`}
+                className="px-3 py-1 bg-white border rounded-full text-sm hover:bg-gray-50 shadow-sm"
+              >
+                {cap}
+              </a>
+            ))}
 
-<a
-key={cap}
-href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-white border rounded-full text-sm hover:bg-gray-50 shadow-sm"
->
-{cap}
-</a>
+          </div>
 
-))}
+        </div>
 
-</div>
+      </section>
 
-</div>
+      {/* 🚨 BREAKING SIGNAL */}
 
-</section>
+      {rssItems
+        .filter((i: any) => i?.isBreaking)
+        .slice(0, 1)
+        .map((item: any, i: number) => (
 
-{/* 🚨 BREAKING SIGNAL */}
+          <section key={i} className="max-w-5xl mx-auto px-6 mt-10">
 
-{rssItems.filter((i:any)=>i.isBreaking).slice(0,1).map((item:any,i:number)=>(
+            <a
+              href={item.link}
+              target="_blank"
+              className="block bg-red-600 text-white rounded-xl p-6 shadow-lg hover:bg-red-700 transition"
+            >
 
-<section key={i} className="max-w-5xl mx-auto px-6 mt-10">
+              <div className="text-xs uppercase tracking-wide opacity-80 mb-2">
+                🚨 Breaking Supply Chain Signal
+              </div>
 
-<a
-href={item.link}
-target="_blank"
-className="block bg-red-600 text-white rounded-xl p-6 shadow-lg hover:bg-red-700 transition"
->
+              <div className="text-lg font-semibold leading-snug">
+                {item.title}
+              </div>
 
-<div className="text-xs uppercase tracking-wide opacity-80 mb-2">
-🚨 Breaking Supply Chain Signal
-</div>
+              <div className="text-xs mt-2 opacity-80">
+                {item.source} • {item.hoursAgo ?? "recent"}h ago
+              </div>
 
-<div className="text-lg font-semibold leading-snug">
-{item.title}
-</div>
+            </a>
 
-<div className="text-xs mt-2 opacity-80">
-{item.source} • {item.hoursAgo ?? "recent"}h ago
-</div>
+          </section>
 
-</a>
+        ))}
 
-</section>
+      {/* TRENDING */}
 
-))}
+      <section className="max-w-7xl mx-auto py-14 px-6">
 
-{/* TRENDING */}
+        <div className="grid md:grid-cols-2 gap-8">
 
-<section className="max-w-7xl mx-auto py-14 px-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
 
-<div className="grid md:grid-cols-2 gap-8">
+            <h3 className="font-semibold mb-2">⚙ Trending Industrial</h3>
 
-<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <div className="flex flex-wrap justify-center gap-2">
 
-<h3 className="font-semibold mb-2">⚙ Trending Industrial</h3>
+              {industrialCapabilities.map((cap: string) => (
+                <a
+                  key={cap}
+                  href={`/search?capability=${encodeURIComponent(cap)}`}
+                  className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
+                >
+                  {cap}
+                </a>
+              ))}
 
-<div className="flex flex-wrap justify-center gap-2">
+            </div>
 
-{industrialCapabilities.map((cap: string)=>(
+          </div>
 
-<a
-key={cap}
-href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
->
-{cap}
-</a>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
 
-))}
+            <h3 className="font-semibold mb-2">💼 Business Services</h3>
 
-</div>
+            <div className="flex flex-wrap justify-center gap-2">
 
-</div>
+              {businessCapabilities.map((cap: string) => (
+                <a
+                  key={cap}
+                  href={`/search?capability=${encodeURIComponent(cap)}`}
+                  className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
+                >
+                  {cap}
+                </a>
+              ))}
 
-<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            </div>
 
-<h3 className="font-semibold mb-2">💼 Business Services</h3>
+          </div>
 
-<div className="flex flex-wrap justify-center gap-2">
+        </div>
 
-{businessCapabilities.map((cap: string)=>(
+      </section>
 
-<a
-key={cap}
-href={`/search?capability=${encodeURIComponent(cap)}`}
-className="px-3 py-1 bg-gray-100 border rounded text-xs hover:bg-white hover:shadow"
->
-{cap}
-</a>
+      {/* 🧠 INTELLIGENCE FEED */}
 
-))}
+      <section className="max-w-7xl mx-auto py-14 px-6">
 
-</div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 
-</div>
+          <h3 className="font-semibold mb-6 text-center">
+            🧠 Live Supply Chain Intelligence
+          </h3>
 
-</div>
+          <div className="space-y-3">
 
-</section>
+            {rssItems.map((item: any, i: number) => (
 
-{/* 🧠 INTELLIGENCE FEED */}
+              <a
+                key={i}
+                href={item.link}
+                target="_blank"
+                className="flex justify-between items-start gap-4 p-4 rounded-lg border hover:bg-gray-50 transition"
+              >
 
-<section className="max-w-7xl mx-auto py-14 px-6">
+                <div className="flex-1">
 
-<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                  <div className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
+                    {item.title}
+                  </div>
 
-<h3 className="font-semibold mb-6 text-center">
-🧠 Live Supply Chain Intelligence
-</h3>
+                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                    <span>{item.source}</span>
 
-<div className="space-y-3">
+                    {item.hoursAgo !== null && (
+                      <>
+                        <span>•</span>
+                        <span>{item.hoursAgo}h ago</span>
+                      </>
+                    )}
+                  </div>
 
-{rssItems.map((item:any, i:number)=>(
+                </div>
 
-<a
-key={i}
-href={item.link}
-target="_blank"
-className="flex justify-between items-start gap-4 p-4 rounded-lg border hover:bg-gray-50 transition"
->
+                <div className="flex flex-col items-end gap-2">
 
-<div className="flex-1">
+                  <div className={`text-xs px-2 py-1 rounded ${
+                    item.score >= 5
+                      ? "bg-red-100 text-red-600"
+                      : item.score >= 3
+                      ? "bg-orange-100 text-orange-600"
+                      : "bg-gray-100 text-gray-500"
+                  }`}>
+                    {item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
+                  </div>
 
-<div className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">
-{item.title}
-</div>
+                  <div className="text-[10px] text-gray-400 uppercase">
+                    {item.category || extractTag(item.title)}
+                  </div>
 
-<div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-<span>{item.source}</span>
+                </div>
 
-{item.hoursAgo !== null && (
-<>
-<span>•</span>
-<span>{item.hoursAgo}h ago</span>
-</>
-)}
-</div>
+              </a>
 
-</div>
+            ))}
 
-<div className="flex flex-col items-end gap-2">
+          </div>
 
-<div className={`text-xs px-2 py-1 rounded ${
-item.score >= 5
-? "bg-red-100 text-red-600"
-: item.score >= 3
-? "bg-orange-100 text-orange-600"
-: "bg-gray-100 text-gray-500"
-}`}>
-{item.score >= 5 ? "HIGH" : item.score >= 3 ? "MED" : "LOW"}
-</div>
+        </div>
 
-<div className="text-[10px] text-gray-400 uppercase">
-{item.category || extractTag(item.title)}
-</div>
+      </section>
 
-</div>
+      {/* 🧬 THEMES */}
 
-</a>
+      <section className="max-w-7xl mx-auto px-6 pb-10">
 
-))}
+        <div className="grid md:grid-cols-3 gap-6">
 
-</div>
+          {["Steel", "Mining", "Logistics"].map((theme) => {
 
-</div>
+            const filtered = rssItems
+              .filter((i: any) => (i.category || extractTag(i.title)) === theme)
+              .slice(0, 3)
 
-</section>
+            if (filtered.length === 0) return null
 
-{/* 🧬 THEMES */}
+            return (
 
-<section className="max-w-7xl mx-auto px-6 pb-10">
+              <div key={theme} className="bg-white border rounded-xl p-4">
 
-<div className="grid md:grid-cols-3 gap-6">
+                <h4 className="text-sm font-semibold mb-3">{theme}</h4>
 
-{["Steel","Mining","Logistics"].map((theme)=>{
+                <div className="space-y-2">
 
-const filtered = rssItems
-  .filter((i:any)=> (i.category || extractTag(i.title)) === theme)
-  .slice(0,3)
+                  {filtered.map((item: any, i: number) => (
+                    <a
+                      key={i}
+                      href={item.link}
+                      target="_blank"
+                      className="block text-xs hover:underline line-clamp-2"
+                    >
+                      {item.title}
+                    </a>
+                  ))}
 
-if(filtered.length === 0) return null
+                </div>
 
-return(
+              </div>
 
-<div key={theme} className="bg-white border rounded-xl p-4">
+            )
 
-<h4 className="text-sm font-semibold mb-3">{theme}</h4>
+          })}
 
-<div className="space-y-2">
+        </div>
 
-{filtered.map((item:any,i:number)=>(
-<a key={i}
-href={item.link}
-target="_blank"
-className="block text-xs hover:underline line-clamp-2">
-{item.title}
-</a>
-))}
+      </section>
 
-</div>
+      <footer className="py-10 bg-black text-gray-400 text-center text-sm">
+        © {new Date().getFullYear()} What's the Supplier?
+      </footer>
 
-</div>
-
-)
-
-})}
-
-</div>
-
-</section>
-
-<footer className="py-10 bg-black text-gray-400 text-center text-sm">
-© {new Date().getFullYear()} What's the Supplier?
-</footer>
-
-</main>
-
-)
+    </main>
+  )
 }
