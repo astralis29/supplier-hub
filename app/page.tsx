@@ -1,9 +1,8 @@
 export const revalidate = 300
 
+import SearchSection from "./components/SearchSection"
 import { getRSSData } from "@/lib/rss"
 import { Pool } from "pg"
-import SearchBar from "./components/SearchBar"
-import LiveResults from "./components/LiveResults"
 
 /* ---------------- DB ---------------- */
 
@@ -26,25 +25,6 @@ function extractTag(title: string) {
   if (t.includes("energy")) return "Energy"
 
   return "General"
-}
-
-/* ---------------- CLIENT WRAPPER ---------------- */
-
-function SearchSection({ countries }: { countries: string[] }) {
-  "use client"
-
-  const { useState } = require("react")
-  const [liveQuery, setLiveQuery] = useState("")
-
-  return (
-    <>
-      <SearchBar
-        countries={countries}
-        onQueryChange={setLiveQuery}
-      />
-      <LiveResults query={liveQuery} />
-    </>
-  )
 }
 
 /* ---------------- HOME ---------------- */
@@ -137,6 +117,7 @@ export default async function Home() {
             Real-time supplier discovery powered by live market signals.
           </p>
 
+          {/* ✅ CLEAN CLIENT COMPONENT */}
           <SearchSection countries={countries} />
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
