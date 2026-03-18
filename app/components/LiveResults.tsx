@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import { toTitleCase } from "@/lib/utils"
 
 export default function LiveResults({ query }: { query: string }) {
 
@@ -87,12 +88,14 @@ export default function LiveResults({ query }: { query: string }) {
             {/* TEXT */}
             <div className="flex-1 min-w-0">
 
+              {/* COMPANY NAME (KEEP RAW) */}
               <div className="text-sm font-medium text-gray-900 truncate">
                 {s.abn_name}
               </div>
 
+              {/* LOCATION (CLEANED) */}
               <div className="text-xs text-gray-500">
-                {s.state} {s.postcode}
+                {toTitleCase(s.state || "")} {s.postcode}
               </div>
 
             </div>

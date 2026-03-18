@@ -1,8 +1,10 @@
 export const revalidate = 300
 
 import SearchSection from "./components/SearchSection"
+import CrawlerStats from "./components/CrawlerStats"
 import { getRSSData } from "@/lib/rss"
 import { Pool } from "pg"
+import { toTitleCase } from "@/lib/utils"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -109,7 +111,7 @@ export default async function Home() {
                 href={`/search?capability=${encodeURIComponent(cap)}`}
                 className="px-3 py-1 bg-white border rounded-full text-sm hover:bg-gray-50 shadow-sm"
               >
-                {cap}
+                {toTitleCase(cap)}
               </a>
             ))}
 
@@ -119,7 +121,7 @@ export default async function Home() {
 
       </section>
 
-      {/* 📡 LIVE RSS TICKER (MOVED HERE) */}
+      {/* 📡 LIVE RSS TICKER */}
 
       <div className="w-full bg-black text-white overflow-hidden border-b border-gray-800">
         <div className="whitespace-nowrap animate-scroll flex gap-10 py-2 px-4 text-sm">
@@ -139,6 +141,9 @@ export default async function Home() {
 
         </div>
       </div>
+
+      {/* 🚀 DISCOVERY PROGRESS */}
+      <CrawlerStats />
 
       {/* 🚨 BREAKING SIGNAL */}
 
@@ -182,7 +187,8 @@ export default async function Home() {
         </h3>
 
         <div className="grid md:grid-cols-3 gap-6">
-{["Steel", "Mining", "Logistics", "Freight", "Energy", "Defence"].map((theme) => {
+
+          {["Steel", "Mining", "Logistics", "Freight", "Energy", "Defence"].map((theme) => {
 
             const filtered = rssItems
               .filter((i: any) => (i.category || extractTag(i.title)) === theme)
