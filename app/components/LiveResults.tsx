@@ -5,98 +5,117 @@ import Image from "next/image"
 
 export default function LiveResults({ query }: { query: string }) {
 
-const [results,setResults] = useState<any[]>([])
-const [loading,setLoading] = useState(false)
+  const [results, setResults] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-useEffect(()=>{
+  useEffect(() => {
 
-if(query.length < 2){
-setResults([])
-return
-}
+    if (query.length < 2) {
+      setResults([])
+      return
+    }
 
-const timeout = setTimeout(async ()=>{
+    const timeout = setTimeout(async () => {
 
-setLoading(true)
+      setLoading(true)
 
-const res = await fetch(`/api/search?q=${query}`)
-const data = await res.json()
+      try {
+        const res = await fetch(`/api/search?q=${query}`)
+        const data = await res.json()
+        setResults(data.suppliers || [])
+      } catch (err) {
+        console.error("Search error:", err)
+        setResults([])
+      }
 
-setResults(data.suppliers || [])
-setLoading(false)
+      setLoading(false)
 
-}, 300)
+    }, 300)
 
-return ()=>clearTimeout(timeout)
+    return () => clearTimeout(timeout)
 
-},[query])
+  }, [query])
 
-if(query.length < 2) return null
+  if (query.length < 2) return null
 
-return(
+  return (
 
-<div className="mt-6 bg-white rounded-xl shadow border p-6">
+    <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-xl shadow-xl border z-50 max-h-[400px] overflow-y-auto">
 
-<p className="text-sm text-gray-500 mb-4">
-Showing results for <strong>{query}</strong>
-</p>
+      {/* HEADER */}
+      <div className="p-4 border-b bg-gray-50 rounded-t-xl">
+        <p className="text-sm text-gray-600">
+          Results for <strong>{query}</strong>
+        </p>
+      </div>
 
-{loading && (
-<p className="text-sm text-gray-400">Searching...</p>
-)}
+      {/* LOADING */}
+      {loading && (
+        <p className="p-4 text-sm text-gray-400">Searching...</p>
+      )}
 
-<div className="grid md:grid-cols-2 gap-4">
+      {/* RESULTS */}
+      <div className="divide-y">
 
-{results.map((s:any)=>(
+        {results.slice(0, 10).map((s: any) => (
 
-<div
-key={s.abn}
-className="flex items-center gap-4 p-4 border rounded-lg hover:shadow transition"
->
+          <a
+            key={s.abn}
+            href={`/suppliers/${s.abn}`}
+            className="flex items-center gap-3 p-4 hover:bg-gray-50 transition"
+          >
 
-<div className="w-10 h-10">
+            {/* LOGO */}
+            <div className="w-8 h-8 flex-shrink-0">
 
-{s.domain ? (
-<Image
-src={`https://logo.clearbit.com/${s.domain}`}
-alt={s.abn_name}
-width={40}
-height={40}
-/>
-) : (
-<div className="w-10 h-10 bg-gray-200 flex items-center justify-center rounded">
-{s.abn_name?.charAt(0)}
-</div>
-)}
+              {s.domain ? (
+                <Image
+                  src={`https://logo.clearbit.com/${s.domain}`}
+                  alt={s.abn_name}
+                  width={32}
+                  height={32}
+                  className="rounded"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gray-200 flex items-center justify-center rounded text-xs font-medium">
+                  {s.abn_name?.charAt(0)}
+                </div>
+              )}
 
-</div>
+            </div>
 
-<div className="flex-1">
+            {/* TEXT */}
+            <div className="flex-1 min-w-0">
 
-<div className="font-semibold">
-{s.abn_name}
-</div>
+              <div className="text-sm font-medium text-gray-900 truncate">
+                {s.abn_name}
+              </div>
 
-<div className="text-xs text-gray-500">
-{s.state} {s.postcode}
-</div>
+              <div className="text-xs text-gray-500">
+                {s.state} {s.postcode}
+              </div>
 
-</div>
+            </div>
 
-<a
-href={`/suppliers/${s.abn}`}
-className="text-blue-600 text-sm"
->
-View →
-</a>
+            {/* ACTION */}
+            <span className="text-xs text-blue-600">
+              View →
+            </span>
 
-</div>
+          </a>
 
-))}
+        ))}
 
-</div>
+        {/* EMPTY STATE */}
+        {!loading && results.length === 0 && (
+          <p className="p-4 text-sm text-gray-400">
+            No results found
+          </p>
+        )}
 
-</div>
+      </div>
 
-)
+    </div>
+
+  )
 }
