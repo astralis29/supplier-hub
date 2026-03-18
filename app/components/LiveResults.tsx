@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import { toTitleCase } from "@/lib/utils"
 
 export default function LiveResults({ query }: { query: string }) {
@@ -71,21 +70,38 @@ export default function LiveResults({ query }: { query: string }) {
               #{i + 1}
             </div>
 
-            {/* LOGO */}
+            {/* 🔥 LOGO (FIXED SYSTEM) */}
             <div className="w-9 h-9 flex-shrink-0 bg-white border rounded-md flex items-center justify-center overflow-hidden">
 
               {s.domain ? (
-                <Image
-                  src={`https://www.google.com/s2/favicons?sz=128&domain=${s.domain}`}
+                <img
+                  src={`https://www.google.com/s2/favicons?sz=64&domain=${s.domain}`}
                   alt={s.abn_name}
-                  width={20}
-                  height={20}
-                  className="object-contain"
+                  className="w-5 h-5 object-contain"
+                  onLoad={(e) => {
+                    const img = e.currentTarget
+
+                    // If favicon is tiny/empty → fallback
+                    if (img.naturalWidth <= 16) {
+                      img.src = `https://${s.domain}/favicon.ico`
+                    }
+                  }}
                   onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none"
+                    const img = e.currentTarget
+
+                    // fallback 1 → direct favicon
+                    img.src = `https://${s.domain}/favicon.ico`
+
+                    img.onerror = () => {
+                      // fallback 2 → hide broken image
+                      img.style.display = "none"
+                    }
                   }}
                 />
-              ) : (
+              ) : null}
+
+              {/* FINAL FALLBACK */}
+              {!s.domain && (
                 <span className="text-xs font-semibold text-gray-600">
                   {s.abn_name?.charAt(0)}
                 </span>
