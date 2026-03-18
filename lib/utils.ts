@@ -1,3 +1,5 @@
+export {}
+
 export function toTitleCase(str: string) {
   const smallWords = ["and", "or", "the", "of", "in", "on", "at", "to", "for"]
 
