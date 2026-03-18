@@ -4,7 +4,7 @@ import SearchSection from "./components/SearchSection"
 import CrawlerStats from "./components/CrawlerStats"
 import { getRSSData } from "@/lib/rss"
 import { Pool } from "pg"
-import { toTitleCase } from "@/lib/utils"
+import { toTitleCase } from "../lib/utils"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
