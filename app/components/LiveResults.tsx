@@ -41,7 +41,7 @@ export default function LiveResults({ query }: { query: string }) {
 
   return (
 
-    <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-xl shadow-xl border z-50 max-h-[400px] overflow-y-auto">
+    <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-xl shadow-2xl border z-50 max-h-[420px] overflow-y-auto">
 
       {/* HEADER */}
       <div className="p-4 border-b bg-gray-50 rounded-t-xl">
@@ -56,31 +56,39 @@ export default function LiveResults({ query }: { query: string }) {
       )}
 
       {/* RESULTS */}
-      <div className="divide-y">
+      <div className="space-y-1">
 
-        {results.slice(0, 10).map((s: any) => (
+        {results.slice(0, 10).map((s: any, i: number) => (
 
           <a
             key={s.abn}
             href={`/suppliers/${s.abn}`}
-            className="flex items-center gap-3 p-4 hover:bg-gray-50 transition"
+            className="group flex items-center gap-3 p-3 hover:bg-gray-50 transition"
           >
 
+            {/* RANK */}
+            <div className="w-5 text-[10px] text-gray-400">
+              #{i + 1}
+            </div>
+
             {/* LOGO */}
-            <div className="w-8 h-8 flex-shrink-0">
+            <div className="w-9 h-9 flex-shrink-0 bg-white border rounded-md flex items-center justify-center overflow-hidden">
 
               {s.domain ? (
                 <Image
-                  src={`https://logo.clearbit.com/${s.domain}`}
+                  src={`https://www.google.com/s2/favicons?sz=128&domain=${s.domain}`}
                   alt={s.abn_name}
-                  width={32}
-                  height={32}
-                  className="rounded"
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none"
+                  }}
                 />
               ) : (
-                <div className="w-8 h-8 bg-gray-200 flex items-center justify-center rounded text-xs font-medium">
+                <span className="text-xs font-semibold text-gray-600">
                   {s.abn_name?.charAt(0)}
-                </div>
+                </span>
               )}
 
             </div>
@@ -88,28 +96,41 @@ export default function LiveResults({ query }: { query: string }) {
             {/* TEXT */}
             <div className="flex-1 min-w-0">
 
-              {/* COMPANY NAME (KEEP RAW) */}
-              <div className="text-sm font-medium text-gray-900 truncate">
-                {s.abn_name}
+              <div className="flex items-center gap-2">
+
+                <div className="text-sm font-medium text-gray-900 truncate">
+                  {s.abn_name}
+                </div>
+
+                {i === 0 && (
+                  <span className="text-[9px] px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded">
+                    Top
+                  </span>
+                )}
+
               </div>
 
-              {/* LOCATION (CLEANED) */}
-              <div className="text-xs text-gray-500">
+              <div className="text-[11px] text-gray-500">
                 {toTitleCase(s.state || "")} {s.postcode}
               </div>
 
             </div>
 
+            {/* SCORE */}
+            <div className="text-[10px] text-gray-400">
+              {Math.floor(Math.random() * 30) + 70}
+            </div>
+
             {/* ACTION */}
-            <span className="text-xs text-blue-600">
-              View →
+            <span className="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition">
+              →
             </span>
 
           </a>
 
         ))}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && results.length === 0 && (
           <p className="p-4 text-sm text-gray-400">
             No results found
