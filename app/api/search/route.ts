@@ -78,13 +78,16 @@ export async function GET(req: Request) {
 
       WHERE
       (
-        ($1 = '%%')
-        OR sp.abn_name ILIKE $1
+        sp.abn_name ILIKE $1
+
         OR EXISTS (
-          SELECT 1 FROM unnest(sp.keywords) k WHERE k ILIKE $1
+          SELECT 1 FROM unnest(sp.keywords) k
+          WHERE k ILIKE $1
         )
+
         OR EXISTS (
-          SELECT 1 FROM unnest(sp.capabilities) c WHERE c ILIKE $1
+          SELECT 1 FROM unnest(sp.capabilities) c
+          WHERE c ILIKE $1
         )
       )
     `
@@ -121,24 +124,32 @@ export async function GET(req: Request) {
       index++
     }
 
-    /* ---------- MAIN QUERY ---------- */
+    /* ---------- SMART ORDERING (🔥 NEW) ---------- */
 
     query += `
-      ORDER BY sp.abn_name
+      ORDER BY
+        CASE
+          WHEN sp.abn_name ILIKE $1 THEN 1
+          WHEN EXISTS (
+            SELECT 1 FROM unnest(sp.capabilities) c WHERE c ILIKE $1
+          ) THEN 2
+          ELSE 3
+        END,
+        sp.abn_name
       LIMIT ${limit}
     `
 
     const result = await pool.query(query, params)
 
     /* -----------------------------------------
-       🔥 CLEAN DOMAIN FOR FAVICON (FINAL FIX)
+       🔥 CLEAN DOMAIN FOR FAVICON
     ------------------------------------------*/
 
     const suppliers = result.rows.map((s: any) => {
 
       let favicon_domain: string | null = null
 
-      // ✅ 1. Use domain field if valid
+      // 1. Use domain if valid
       if (s.domain && typeof s.domain === "string") {
         let clean = s.domain.trim().toLowerCase()
 
@@ -148,7 +159,7 @@ export async function GET(req: Request) {
         }
       }
 
-      // ✅ 2. Extract from website URL if needed
+      // 2. Extract from website
       if (!favicon_domain && s.website && typeof s.website === "string") {
         try {
           const url = new URL(
@@ -165,7 +176,7 @@ export async function GET(req: Request) {
           }
 
         } catch {
-          // ignore invalid website values like "Hanwha Group"
+          // ignore invalid values
         }
       }
 
