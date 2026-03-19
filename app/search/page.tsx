@@ -18,8 +18,16 @@ function SearchContent(){
 
   const [cursorStack, setCursorStack] = useState<string[]>([])
 
+  // ✅ FIX: READ FROM URL
+  const urlQuery = searchParams.get("q") || ""
   const country = searchParams.get("country")
-  const capability = searchParams.get("capability")
+
+  // ✅ SYNC URL → INPUT
+  useEffect(() => {
+    setQuery(urlQuery)
+    setCursor(null)
+    setCursorStack([])
+  }, [urlQuery])
 
   useEffect(()=>{
     const delay = setTimeout(()=>{
@@ -28,7 +36,7 @@ function SearchContent(){
 
     return ()=>clearTimeout(delay)
 
-  },[query,country,capability,cursor])
+  },[query,country,cursor])
 
 
   async function fetchSuppliers(){
@@ -37,9 +45,9 @@ function SearchContent(){
 
     const params = new URLSearchParams()
 
+    // ✅ ALWAYS USE q FROM STATE
     if(query) params.append("q",query)
     if(country) params.append("country",country)
-    if(capability) params.append("capability",capability)
     if(cursor) params.append("cursor",cursor)
 
     const res = await fetch(`/api/search?${params}`)
@@ -129,7 +137,6 @@ function SearchContent(){
             className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
           >
 
-            {/* ✅ FINAL FIX: USE favicon_domain */}
             <div className="col-span-1">
               <SupplierLogo
                 name={supplier.abn_name}

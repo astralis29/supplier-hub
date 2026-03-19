@@ -124,7 +124,7 @@ export async function GET(req: Request) {
       index++
     }
 
-    /* ---------- SMART ORDERING (🔥 NEW) ---------- */
+    /* ---------- 🔥 FINAL SMART RANKING ---------- */
 
     query += `
       ORDER BY
@@ -133,7 +133,10 @@ export async function GET(req: Request) {
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.capabilities) c WHERE c ILIKE $1
           ) THEN 2
-          ELSE 3
+          WHEN EXISTS (
+            SELECT 1 FROM unnest(sp.keywords) k WHERE k ILIKE $1
+          ) THEN 3
+          ELSE 4
         END,
         sp.abn_name
       LIMIT ${limit}
@@ -149,7 +152,6 @@ export async function GET(req: Request) {
 
       let favicon_domain: string | null = null
 
-      // 1. Use domain if valid
       if (s.domain && typeof s.domain === "string") {
         let clean = s.domain.trim().toLowerCase()
 
@@ -159,7 +161,6 @@ export async function GET(req: Request) {
         }
       }
 
-      // 2. Extract from website
       if (!favicon_domain && s.website && typeof s.website === "string") {
         try {
           const url = new URL(
@@ -176,7 +177,7 @@ export async function GET(req: Request) {
           }
 
         } catch {
-          // ignore invalid values
+          // ignore bad values
         }
       }
 
