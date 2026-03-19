@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import SupplierLogo from "../components/SupplierLogo"
 
 function SearchContent(){
 
@@ -21,7 +22,6 @@ function SearchContent(){
   const capability = searchParams.get("capability")
 
   useEffect(()=>{
-
     const delay = setTimeout(()=>{
       fetchSuppliers()
     },300)
@@ -49,7 +49,6 @@ function SearchContent(){
     setNextCursor(data.nextCursor || null)
 
     setLoading(false)
-
   }
 
   function toTitleCase(str:string){
@@ -60,31 +59,24 @@ function SearchContent(){
   }
 
   function goNext(){
-
     if(!nextCursor) return
-
     setCursorStack([...cursorStack, cursor || ""])
     setCursor(nextCursor)
-
   }
 
   function goPrev(){
-
     if(cursorStack.length === 0) return
-
     const newStack = [...cursorStack]
     const prevCursor = newStack.pop() || null
-
     setCursor(prevCursor)
     setCursorStack(newStack)
-
   }
 
   return (
 
-    <main className="max-w-7xl mx-auto p-8 space-y-8">
+    <main className="max-w-6xl mx-auto p-8 space-y-8">
 
-      <div className="space-y-3">
+      <div className="space-y-3 text-center">
 
         <h1 className="text-4xl font-bold">
           Discover Industrial Suppliers
@@ -96,7 +88,7 @@ function SearchContent(){
 
       </div>
 
-      <div className="flex gap-4 items-center">
+      <div className="flex justify-center gap-4 items-center">
 
         <input
           className="border border-gray-300 p-3 rounded-lg w-full max-w-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -117,7 +109,7 @@ function SearchContent(){
 
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+      <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
 
         <div className="grid grid-cols-12 gap-4 bg-gray-50 text-xs font-semibold text-gray-500 uppercase p-4 border-b">
 
@@ -130,172 +122,134 @@ function SearchContent(){
 
         </div>
 
-{suppliers.map((supplier:any)=>(
+        {suppliers.map((supplier:any)=>(
 
-<div
-key={supplier.abn}
-className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
->
+          <div
+            key={supplier.abn}
+            className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
+          >
 
-<div className="col-span-1">
+            {/* ✅ LOGO FIXED */}
+            <div className="col-span-1">
+              <SupplierLogo
+                name={supplier.abn_name}
+                website={supplier.domain}
+                size={40}
+              />
+            </div>
 
-<div className="w-10 h-10 relative">
+            <div className="col-span-4 space-y-1">
 
-{supplier.domain && (
+              <div className="font-semibold">
+                {supplier.abn_name}
+              </div>
 
-<img
-src={`https://logo.clearbit.com/${supplier.domain}`}
-className="w-10 h-10 rounded border absolute top-0 left-0 object-contain"
-onError={(e)=>{
-  const target = e.target as HTMLImageElement
-  target.style.display = "none"
-}}
-/>
+              {/* ✅ STATE UPPERCASE */}
+              <div className="text-sm text-gray-500 uppercase">
+                {supplier.state} {supplier.postcode}
+              </div>
 
-)}
+              <div className="text-xs text-gray-500">
+                ABN: {supplier.abn}
+              </div>
 
-<div className="w-10 h-10 flex items-center justify-center bg-gray-200 rounded border text-sm font-semibold">
-{supplier.abn_name?.charAt(0)}
-</div>
+            </div>
 
-</div>
+            <div className="col-span-3 flex flex-wrap gap-2">
 
-</div>
+              {supplier.capabilities?.slice(0,4).map((c:any)=>(
 
-<div className="col-span-4 space-y-1">
+                <span
+                  key={c}
+                  className="text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded"
+                >
+                  {toTitleCase(c)}
+                </span>
 
-<div className="font-semibold">
-{supplier.abn_name}
-</div>
+              ))}
 
-<div className="text-sm text-gray-500">
-{supplier.state} {supplier.postcode}
-</div>
+            </div>
 
-<div className="text-xs text-gray-500">
-ABN: {supplier.abn}
-</div>
+            <div className="col-span-2 text-sm">
 
-</div>
+              {supplier.website && (
 
-<div className="col-span-3 flex flex-wrap gap-2">
+                <a
+                  href={supplier.website}
+                  target="_blank"
+                  className="text-blue-600 hover:underline"
+                >
+                  {supplier.website_name || supplier.domain}
+                </a>
 
-{supplier.capabilities?.slice(0,4).map((c:any)=>(
+              )}
 
-<span
-key={c}
-className="text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded"
->
-{toTitleCase(c)}
-</span>
+            </div>
 
-))}
+            <div className="col-span-1 text-xs space-y-1">
 
-</div>
+              {supplier.abn_status === "ACT" ? (
+                <div className="text-green-600">✔ Active</div>
+              ) : (
+                <div className="text-red-600">✖ Inactive</div>
+              )}
 
-<div className="col-span-2 text-sm">
+              {supplier.gst_registered ? (
+                <div className="text-green-600">✔ GST</div>
+              ) : (
+                <div className="text-red-500">✖ GST</div>
+              )}
 
-{supplier.website && (
+            </div>
 
-<a
-href={supplier.website}
-target="_blank"
-className="text-blue-600 hover:underline"
->
+            <div className="col-span-1 text-right">
 
-{supplier.website_name || supplier.domain}
+              <Link
+                href={`/suppliers/${supplier.abn}`}
+                className="text-blue-600 text-sm hover:underline"
+              >
+                View →
+              </Link>
 
-</a>
+            </div>
 
-)}
+          </div>
 
-</div>
-
-<div className="col-span-1 text-xs space-y-1">
-
-{supplier.abn_status === "ACT" ? (
-
-<div className="text-green-600">
-✔ Active
-</div>
-
-) : (
-
-<div className="text-red-600">
-✖ Inactive
-</div>
-
-)}
-
-{supplier.gst_registered ? (
-
-<div className="text-green-600">
-✔ GST
-</div>
-
-) : (
-
-<div className="text-red-500">
-✖ GST
-</div>
-
-)}
-
-</div>
-
-<div className="col-span-1 text-right">
-
-<Link
-href={`/suppliers/${supplier.abn}`}
-className="text-blue-600 text-sm hover:underline"
->
-
-View →
-
-</Link>
-
-</div>
-
-</div>
-
-))}
+        ))}
 
       </div>
 
-{/* Cursor Pagination */}
+      {/* Pagination */}
 
-<div className="flex justify-center items-center gap-4 mt-8">
+      <div className="flex justify-center items-center gap-4 mt-8">
 
-<button
-onClick={goPrev}
-disabled={cursorStack.length===0}
-className="px-4 py-2 border rounded disabled:opacity-40"
->
-Prev
-</button>
+        <button
+          onClick={goPrev}
+          disabled={cursorStack.length===0}
+          className="px-4 py-2 border rounded disabled:opacity-40"
+        >
+          Prev
+        </button>
 
-<button
-onClick={goNext}
-disabled={!nextCursor}
-className="px-4 py-2 border rounded disabled:opacity-40"
->
-Next
-</button>
+        <button
+          onClick={goNext}
+          disabled={!nextCursor}
+          className="px-4 py-2 border rounded disabled:opacity-40"
+        >
+          Next
+        </button>
 
-</div>
+      </div>
 
     </main>
 
   )
-
 }
 
 export default function SearchPage(){
-
   return (
     <Suspense fallback={<div className="p-10">Loading search...</div>}>
       <SearchContent/>
     </Suspense>
   )
-
 }
