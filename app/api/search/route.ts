@@ -131,22 +131,24 @@ export async function GET(req: Request) {
     const result = await pool.query(query, params)
 
     /* -----------------------------------------
-       🔥 CLEAN DOMAIN FOR FAVICON
+       🔥 CLEAN DOMAIN FOR FAVICON (FINAL FIX)
     ------------------------------------------*/
 
     const suppliers = result.rows.map((s: any) => {
 
       let favicon_domain: string | null = null
 
-      // 1. Use domain if valid
+      // ✅ 1. Use domain field if valid
       if (s.domain && typeof s.domain === "string") {
-        const clean = s.domain.trim().toLowerCase()
-        if (clean.includes(".") && !clean.includes(" ")) {
+        let clean = s.domain.trim().toLowerCase()
+
+        if (clean.includes(".")) {
+          clean = clean.replace(/^www\./, "")
           favicon_domain = clean
         }
       }
 
-      // 2. Extract from website URL
+      // ✅ 2. Extract from website URL if needed
       if (!favicon_domain && s.website && typeof s.website === "string") {
         try {
           const url = new URL(
@@ -155,14 +157,15 @@ export async function GET(req: Request) {
               : `https://${s.website}`
           )
 
-          const host = url.hostname.toLowerCase()
+          let host = url.hostname.toLowerCase()
+          host = host.replace(/^www\./, "")
 
-          if (host.includes(".") && !host.includes(" ")) {
+          if (host.includes(".")) {
             favicon_domain = host
           }
 
         } catch {
-          // ignore invalid website values
+          // ignore invalid website values like "Hanwha Group"
         }
       }
 
