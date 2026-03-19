@@ -58,14 +58,26 @@ function SearchContent(){
       .replace(/\b\w/g,(l)=>l.toUpperCase())
   }
 
-  // ✅ 🔥 FIX: Always return a REAL domain
+  // ✅ 🔥 FINAL FIX: Extract REAL domain properly
   function getBestDomain(supplier:any) {
+
+    // 1. If domain already valid
     if (supplier.domain && supplier.domain.includes(".")) {
       return supplier.domain
     }
 
+    // 2. Try extracting from website
     if (supplier.website) {
-      return supplier.website
+      try {
+        const url = new URL(
+          supplier.website.startsWith("http")
+            ? supplier.website
+            : `https://${supplier.website}`
+        )
+        return url.hostname
+      } catch {
+        return null
+      }
     }
 
     return null
@@ -142,7 +154,7 @@ function SearchContent(){
             className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
           >
 
-            {/* ✅ LOGO FIXED WITH REAL DOMAIN */}
+            {/* ✅ FIXED LOGO */}
             <div className="col-span-1">
               <SupplierLogo
                 name={supplier.abn_name}
