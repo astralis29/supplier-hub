@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import SupplierLogo from "@/app/components/SupplierLogo"
+import SupplierLogo from "./SupplierLogo"
 
 /* ---------------- TYPES ---------------- */
 
