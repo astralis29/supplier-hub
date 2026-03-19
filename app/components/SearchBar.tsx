@@ -24,247 +24,228 @@ export default function SearchBar({
   onQueryChange?: (q: string) => void
 }) {
 
-const [query,setQuery] = useState("")
-const [show,setShow] = useState(false)
-const [activeIndex,setActiveIndex] = useState(-1)
+  const [query,setQuery] = useState("")
+  const [show,setShow] = useState(false)
+  const [activeIndex,setActiveIndex] = useState(-1)
 
-const [results,setResults] = useState<ResultsState>({
-  capabilities: [],
-  suppliers: [],
-  locations: []
-})
-
-/* ---------------- FLATTEN RESULTS ---------------- */
-
-const flatResults: SearchItem[] = [
-  ...results.capabilities.map((c) => ({
-    type: "capability" as const,
-    value: c.capability
-  })),
-  ...results.suppliers.map((s) => ({
-    type: "supplier" as const,
-    value: s.abn_name,
-    abn: s.abn,
-    domain: s.domain
-  })),
-  ...results.locations.map((l) => ({
-    type: "location" as const,
-    value: l.state
-  }))
-]
-/* ---------------- FETCH ---------------- */
-
-useEffect(()=>{
-
-if(query.length < 2){
-setResults({ capabilities:[], suppliers:[], locations:[] })
-setShow(false)
-setActiveIndex(-1)
-onQueryChange?.("")
-return
-}
-
-const timeout = setTimeout(async ()=>{
-
-  const res = await fetch(`/api/search?q=${query}&suggest=true`)
-  const data = await res.json()
-
-  setResults({
-    capabilities: data.capabilities || [],
-    suppliers: data.suppliers || [],
-    locations: data.locations || []
+  const [results,setResults] = useState<ResultsState>({
+    capabilities: [],
+    suppliers: [],
+    locations: []
   })
 
-  setShow(true)
-  setActiveIndex(-1)
+  /* ---------------- FLATTEN RESULTS ---------------- */
 
-  onQueryChange?.(query)
+  const flatResults: SearchItem[] = [
+    ...results.capabilities.map((c) => ({
+      type: "capability" as const,
+      value: c.capability
+    })),
+    ...results.suppliers.map((s) => ({
+      type: "supplier" as const,
+      value: s.abn_name,
+      abn: s.abn,
+      domain: s.domain
+    })),
+    ...results.locations.map((l) => ({
+      type: "location" as const,
+      value: l.state
+    }))
+  ]
 
-}, 300)
+  /* ---------------- FETCH ---------------- */
 
-return ()=>clearTimeout(timeout)
+  useEffect(()=>{
 
-},[query])
+    if(query.length < 2){
+      setResults({ capabilities:[], suppliers:[], locations:[] })
+      setShow(false)
+      setActiveIndex(-1)
+      onQueryChange?.("")
+      return
+    }
 
-/* ---------------- KEYBOARD NAV ---------------- */
+    const timeout = setTimeout(async ()=>{
 
-function handleKeyDown(e:any){
+      const res = await fetch(`/api/search?q=${query}&suggest=true`)
+      const data = await res.json()
 
-if(!show || flatResults.length === 0) return
+      setResults({
+        capabilities: data.capabilities || [],
+        suppliers: data.suppliers || [],
+        locations: data.locations || []
+      })
 
-if(e.key === "ArrowDown"){
-e.preventDefault()
-setActiveIndex((prev)=> (prev + 1) % flatResults.length)
-}
+      setShow(true)
+      setActiveIndex(-1)
 
-if(e.key === "ArrowUp"){
-e.preventDefault()
-setActiveIndex((prev)=> (prev - 1 + flatResults.length) % flatResults.length)
-}
+      onQueryChange?.(query)
 
-if(e.key === "Enter" && activeIndex >= 0){
+    }, 300)
 
-e.preventDefault()
+    return ()=>clearTimeout(timeout)
 
-const item = flatResults[activeIndex]
+  },[query])
 
-if(item.type === "supplier"){
-window.location.href = `/suppliers/${item.abn}`
-}
+  /* ---------------- KEYBOARD NAV ---------------- */
 
-if(item.type === "capability"){
-window.location.href = `/search?capability=${encodeURIComponent(item.value)}`
-}
+  function handleKeyDown(e:any){
 
-if(item.type === "location"){
-window.location.href = `/search?state=${item.value}`
-}
+    if(!show || flatResults.length === 0) return
 
-}
+    if(e.key === "ArrowDown"){
+      e.preventDefault()
+      setActiveIndex((prev)=> (prev + 1) % flatResults.length)
+    }
 
-if(e.key === "Escape"){
-setShow(false)
-}
+    if(e.key === "ArrowUp"){
+      e.preventDefault()
+      setActiveIndex((prev)=> (prev - 1 + flatResults.length) % flatResults.length)
+    }
 
-}
+    if(e.key === "Enter" && activeIndex >= 0){
 
-/* ---------------- UI ---------------- */
+      e.preventDefault()
+      const item = flatResults[activeIndex]
 
-return(
+      if(item.type === "supplier"){
+        window.location.href = `/suppliers/${item.abn}`
+      }
 
-<form method="GET" action="/search" className="w-full max-w-3xl mx-auto">
+      if(item.type === "capability"){
+        window.location.href = `/search?q=${encodeURIComponent(item.value)}`
+      }
 
-<div className="flex bg-white rounded-xl shadow-lg border overflow-hidden">
+      if(item.type === "location"){
+        window.location.href = `/search?q=${encodeURIComponent(item.value)}`
+      }
+    }
 
-<input
-name="capability"
-value={query}
-onChange={(e)=>setQuery(e.target.value)}
-onKeyDown={handleKeyDown}
-placeholder="🔍 Find suppliers, capabilities or companies..."
-autoComplete="off"
-className="flex-1 px-6 py-4 text-lg outline-none"
-/>
+    if(e.key === "Escape"){
+      setShow(false)
+    }
+  }
 
-<button
-type="submit"
-className="px-8 bg-blue-600 text-white font-semibold hover:bg-blue-700"
->
-Search
-</button>
+  /* ---------------- UI ---------------- */
 
-</div>
+  return(
 
-{show && (
-<div className="bg-white border rounded-xl shadow-lg mt-2 text-left max-h-[320px] overflow-y-auto">
+    <form method="GET" action="/search" className="w-full max-w-3xl mx-auto">
 
-{/* CAPABILITIES */}
-{results.capabilities.length > 0 && (
-<div className="p-2">
-<p className="text-xs text-gray-400 px-2 mb-1">Capabilities</p>
+      <div className="flex bg-white rounded-xl shadow-lg border overflow-hidden">
 
-{results.capabilities.map((c,i)=>{
+        <input
+          name="q"   // ✅ FIXED
+          value={query}
+          onChange={(e)=>setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="🔍 Find suppliers, capabilities or companies..."
+          autoComplete="off"
+          className="flex-1 px-6 py-4 text-lg outline-none"
+        />
 
-const globalIndex = i
+        <button
+          type="submit"
+          className="px-8 bg-blue-600 text-white font-semibold hover:bg-blue-700"
+        >
+          Search
+        </button>
 
-return(
-<div
-key={i}
-onClick={()=>window.location.href=`/search?capability=${encodeURIComponent(c.capability)}`}
-className={`flex items-center gap-3 px-3 py-2 cursor-pointer text-sm ${
-activeIndex === globalIndex ? "bg-blue-100" : "hover:bg-gray-100"
-}`}
->
-<span>⚙️</span>
-<span>{c.capability}</span>
-</div>
-)
+      </div>
 
-})}
-</div>
-)}
+      {show && (
+        <div className="bg-white border rounded-xl shadow-lg mt-2 text-left max-h-[320px] overflow-y-auto">
 
-{/* SUPPLIERS */}
-{results.suppliers.length > 0 && (
-<div className="p-2 border-t">
-<p className="text-xs text-gray-400 px-2 mb-1">Suppliers</p>
+          {/* CAPABILITIES */}
+          {results.capabilities.length > 0 && (
+            <div className="p-2">
+              <p className="text-xs text-gray-400 px-2 mb-1">Capabilities</p>
 
-{results.suppliers.map((s,i)=>{
+              {results.capabilities.map((c,i)=>{
 
-const globalIndex = results.capabilities.length + i
+                const globalIndex = i
 
-return(
-<div
-key={s.abn}
-onClick={()=>window.location.href=`/suppliers/${s.abn}`}
-className={`flex items-center gap-3 px-3 py-2 cursor-pointer text-sm ${
-activeIndex === globalIndex ? "bg-blue-100" : "hover:bg-gray-100"
-}`}
->
+                return(
+                  <div
+                    key={i}
+                    onClick={()=>window.location.href=`/search?q=${encodeURIComponent(c.capability)}`}
+                    className={`flex items-center gap-3 px-3 py-2 cursor-pointer text-sm ${
+                      activeIndex === globalIndex ? "bg-blue-100" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span>⚙️</span>
+                    <span>{c.capability}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-<SupplierLogo
-  name={s.abn_name}
-  website={s.domain}
-/>
+          {/* SUPPLIERS */}
+          {results.suppliers.length > 0 && (
+            <div className="p-2 border-t">
+              <p className="text-xs text-gray-400 px-2 mb-1">Suppliers</p>
 
-<span>{s.abn_name}</span>
+              {results.suppliers.map((s,i)=>{
 
-</div>
-)
+                const globalIndex = results.capabilities.length + i
 
-})}
-</div>
-)}
+                return(
+                  <div
+                    key={s.abn}
+                    onClick={()=>window.location.href=`/suppliers/${s.abn}`}
+                    className={`flex items-center gap-3 px-3 py-2 cursor-pointer text-sm ${
+                      activeIndex === globalIndex ? "bg-blue-100" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <SupplierLogo name={s.abn_name} website={s.domain}/>
+                    <span>{s.abn_name}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-{/* LOCATIONS */}
-{results.locations.length > 0 && (
-<div className="p-2 border-t">
-<p className="text-xs text-gray-400 px-2 mb-1">Locations</p>
+          {/* LOCATIONS */}
+          {results.locations.length > 0 && (
+            <div className="p-2 border-t">
+              <p className="text-xs text-gray-400 px-2 mb-1">Locations</p>
 
-{results.locations.map((l,i)=>{
+              {results.locations.map((l,i)=>{
 
-const globalIndex =
-results.capabilities.length +
-results.suppliers.length +
-i
+                const globalIndex =
+                  results.capabilities.length +
+                  results.suppliers.length +
+                  i
 
-return(
-<div
-key={i}
-onClick={()=>window.location.href=`/search?state=${l.state}`}
-className={`flex items-center gap-3 px-3 py-2 cursor-pointer text-sm ${
-activeIndex === globalIndex ? "bg-blue-100" : "hover:bg-gray-100"
-}`}
->
-<span>📍</span>
-<span>{l.state}</span>
-</div>
-)
+                return(
+                  <div
+                    key={i}
+                    onClick={()=>window.location.href=`/search?q=${l.state}`}
+                    className={`flex items-center gap-3 px-3 py-2 cursor-pointer text-sm ${
+                      activeIndex === globalIndex ? "bg-blue-100" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span>📍</span>
+                    <span>{l.state}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-})}
-</div>
-)}
+        </div>
+      )}
 
-</div>
-)}
+      <div className="mt-4 flex justify-center">
+        <select name="country" className="px-4 py-2 border rounded-lg bg-white text-sm">
+          <option value="">All Countries</option>
+          {countries.map((c)=>(
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
 
-<div className="mt-4 flex justify-center">
-
-<select
-name="country"
-className="px-4 py-2 border rounded-lg bg-white text-sm"
->
-<option value="">All Countries</option>
-
-{countries.map((c)=>(
-<option key={c} value={c}>{c}</option>
-))}
-
-</select>
-
-</div>
-
-</form>
-
-)
+    </form>
+  )
 }

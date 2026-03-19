@@ -43,7 +43,6 @@ export default async function Home() {
         LIMIT 6
       `),
 
-      // ✅ ONLY COUNT SUPPLIERS WITH CAPABILITIES
       pool.query(`
         SELECT COUNT(*) AS total
         FROM supplier_profiles
@@ -99,13 +98,13 @@ export default async function Home() {
 
           <SearchSection countries={countries} />
 
-          {/* CAPABILITY CHIPS */}
+          {/* ✅ FIXED CAPABILITY CHIPS */}
           <div className="mt-6 flex flex-wrap justify-center gap-3">
 
             {industrialCapabilities.slice(0, 5).map((cap: string) => (
               <a
                 key={cap}
-                href={`/search?capability=${encodeURIComponent(cap)}`}
+                href={`/search?q=${encodeURIComponent(cap)}`}   // ✅ FIXED
                 className="px-3 py-1 bg-white/90 border rounded-full text-sm hover:bg-white shadow-sm backdrop-blur"
               >
                 {toTitleCase(cap)}
@@ -211,8 +210,9 @@ export default async function Home() {
 
                 </div>
 
+                {/* ✅ FIXED VIEW SUPPLIERS */}
                 <a
-                  href={`/search?capability=${theme.toLowerCase()}`}
+                  href={`/search?q=${theme.toLowerCase()}`}   // ✅ FIXED
                   className="block mt-4 text-xs text-blue-600 hover:underline"
                 >
                   View suppliers →
