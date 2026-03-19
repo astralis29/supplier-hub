@@ -1,4 +1,5 @@
 import { Pool } from "pg"
+import SupplierLogo from "../../components/SupplierLogo"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -16,12 +17,9 @@ export default async function SupplierPage({ params }: any) {
       abr.gst_registered,
       abr.postcode,
       abr.state
-
     FROM supplier_profiles sp
-
     LEFT JOIN abr_businesses abr
     ON sp.abn = abr.abn
-
     WHERE sp.abn = $1
     LIMIT 1
   `,[abn])
@@ -38,12 +36,11 @@ export default async function SupplierPage({ params }: any) {
 
       <div className="flex items-start gap-6">
 
-        {supplier.domain && (
-          <img
-            src={`https://logo.clearbit.com/${supplier.domain}`}
-            className="w-20 h-20 rounded"
-          />
-        )}
+        <SupplierLogo
+          name={supplier.abn_name}
+          website={supplier.domain}
+          size={80}
+        />
 
         <div>
 
@@ -69,73 +66,35 @@ export default async function SupplierPage({ params }: any) {
 
       </div>
 
-
       <div>
-
-        <h2 className="text-xl font-semibold mb-3">
-          Capabilities
-        </h2>
-
+        <h2 className="text-xl font-semibold mb-3">Capabilities</h2>
         <div className="flex flex-wrap gap-2">
-
           {supplier.capabilities?.map((c:any)=>(
-            <span
-              key={c}
-              className="bg-gray-100 px-3 py-1 rounded text-sm"
-            >
+            <span key={c} className="bg-gray-100 px-3 py-1 rounded text-sm">
               {c}
             </span>
           ))}
-
         </div>
-
       </div>
 
-
       <div>
-
-        <h2 className="text-xl font-semibold mb-3">
-          Keywords Detected
-        </h2>
-
+        <h2 className="text-xl font-semibold mb-3">Keywords Detected</h2>
         <div className="flex flex-wrap gap-2">
-
           {supplier.keywords?.map((k:any)=>(
-            <span
-              key={k}
-              className="bg-blue-50 px-3 py-1 rounded text-sm"
-            >
+            <span key={k} className="bg-blue-50 px-3 py-1 rounded text-sm">
               {k}
             </span>
           ))}
-
         </div>
-
       </div>
 
-
       <div className="border-t pt-6">
-
-        <h2 className="text-xl font-semibold mb-3">
-          Business Information
-        </h2>
-
+        <h2 className="text-xl font-semibold mb-3">Business Information</h2>
         <div className="space-y-1 text-gray-600">
-
-          <div>
-            ABN: {supplier.abn}
-          </div>
-
-          <div>
-            ABN Status: {supplier.abn_status}
-          </div>
-
-          <div>
-            GST Registered: {supplier.gst_registered ? "Yes" : "No"}
-          </div>
-
+          <div>ABN: {supplier.abn}</div>
+          <div>ABN Status: {supplier.abn_status}</div>
+          <div>GST Registered: {supplier.gst_registered ? "Yes" : "No"}</div>
         </div>
-
       </div>
 
     </main>
