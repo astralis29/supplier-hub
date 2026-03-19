@@ -58,6 +58,19 @@ function SearchContent(){
       .replace(/\b\w/g,(l)=>l.toUpperCase())
   }
 
+  // ✅ 🔥 FIX: Always return a REAL domain
+  function getBestDomain(supplier:any) {
+    if (supplier.domain && supplier.domain.includes(".")) {
+      return supplier.domain
+    }
+
+    if (supplier.website) {
+      return supplier.website
+    }
+
+    return null
+  }
+
   function goNext(){
     if(!nextCursor) return
     setCursorStack([...cursorStack, cursor || ""])
@@ -129,11 +142,11 @@ function SearchContent(){
             className="grid grid-cols-12 gap-4 items-center p-4 border-b hover:bg-gray-50 transition"
           >
 
-            {/* ✅ LOGO FIXED */}
+            {/* ✅ LOGO FIXED WITH REAL DOMAIN */}
             <div className="col-span-1">
               <SupplierLogo
                 name={supplier.abn_name}
-                website={supplier.domain}
+                website={getBestDomain(supplier)}
                 size={40}
               />
             </div>
@@ -144,7 +157,6 @@ function SearchContent(){
                 {supplier.abn_name}
               </div>
 
-              {/* ✅ STATE UPPERCASE */}
               <div className="text-sm text-gray-500 uppercase">
                 {supplier.state} {supplier.postcode}
               </div>
@@ -218,8 +230,6 @@ function SearchContent(){
         ))}
 
       </div>
-
-      {/* Pagination */}
 
       <div className="flex justify-center items-center gap-4 mt-8">
 
