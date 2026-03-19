@@ -73,7 +73,6 @@ export async function GET(req: Request) {
         ) AS state
 
       FROM supplier_profiles sp
-
       LEFT JOIN abr_businesses abr
       ON sp.abn = abr.abn
 
@@ -82,14 +81,10 @@ export async function GET(req: Request) {
         ($1 = '%%')
         OR sp.abn_name ILIKE $1
         OR EXISTS (
-          SELECT 1
-          FROM unnest(sp.keywords) k
-          WHERE k ILIKE $1
+          SELECT 1 FROM unnest(sp.keywords) k WHERE k ILIKE $1
         )
         OR EXISTS (
-          SELECT 1
-          FROM unnest(sp.capabilities) c
-          WHERE c ILIKE $1
+          SELECT 1 FROM unnest(sp.capabilities) c WHERE c ILIKE $1
         )
       )
     `
@@ -110,8 +105,7 @@ export async function GET(req: Request) {
     if (capability) {
       query += `
         AND EXISTS (
-          SELECT 1
-          FROM unnest(sp.capabilities) c
+          SELECT 1 FROM unnest(sp.capabilities) c
           WHERE c ILIKE $${index}
         )
       `
@@ -136,13 +130,55 @@ export async function GET(req: Request) {
 
     const result = await pool.query(query, params)
 
+    /* -----------------------------------------
+       🔥 CLEAN DOMAIN FOR FAVICON
+    ------------------------------------------*/
+
+    const suppliers = result.rows.map((s: any) => {
+
+      let favicon_domain: string | null = null
+
+      // 1. Use domain if valid
+      if (s.domain && typeof s.domain === "string") {
+        const clean = s.domain.trim().toLowerCase()
+        if (clean.includes(".") && !clean.includes(" ")) {
+          favicon_domain = clean
+        }
+      }
+
+      // 2. Extract from website URL
+      if (!favicon_domain && s.website && typeof s.website === "string") {
+        try {
+          const url = new URL(
+            s.website.startsWith("http")
+              ? s.website
+              : `https://${s.website}`
+          )
+
+          const host = url.hostname.toLowerCase()
+
+          if (host.includes(".") && !host.includes(" ")) {
+            favicon_domain = host
+          }
+
+        } catch {
+          // ignore invalid website values
+        }
+      }
+
+      return {
+        ...s,
+        favicon_domain
+      }
+    })
+
     const nextCursor =
-      result.rows.length === limit
-        ? result.rows[result.rows.length - 1].abn_name
+      suppliers.length === limit
+        ? suppliers[suppliers.length - 1]?.abn_name || null
         : null
 
     return Response.json({
-      suppliers: result.rows,
+      suppliers,
       nextCursor
     })
 
