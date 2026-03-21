@@ -6,14 +6,17 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 })
 
-export default async function SupplierPage({ params }: any) {
+export default async function SupplierPage({
+  params,
+}: {
+  params: { abn: string }
+}) {
 
-  // 🔥 FIX: handle array param edge case
-  const abn = Array.isArray(params.abn) ? params.abn[0] : params.abn
-  console.log("DB URL:", process.env.DATABASE_URL)
+  // ✅ FIXED PARAM HANDLING
+  const abn = params?.abn
 
-  // 🔍 DEBUG (optional — remove later)
-  console.log("PARAMS:", params.abn)
+  // 🔍 DEBUG (remove later)
+  console.log("PARAMS:", params)
   console.log("FINAL ABN:", abn)
 
   const result = await pool.query(`
@@ -26,13 +29,13 @@ export default async function SupplierPage({ params }: any) {
     FROM supplier_profiles sp
     LEFT JOIN abr_businesses abr
       ON sp.abn = abr.abn
-    WHERE TRIM(sp.abn) = TRIM($1)  -- 🔥 extra safety
+    WHERE TRIM(sp.abn) = TRIM($1)
     LIMIT 1
-  `,[abn])
+  `, [abn])
 
   const supplier = result.rows[0]
 
-  if(!supplier){
+  if (!supplier) {
     return <div className="p-10">Supplier not found</div>
   }
 
@@ -93,7 +96,7 @@ export default async function SupplierPage({ params }: any) {
         <div>
           <h2 className="text-xl font-semibold mb-3">AI Categories</h2>
           <div className="flex flex-wrap gap-2">
-            {supplier.ai_categories.map((c:any)=>(
+            {supplier.ai_categories.map((c: any) => (
               <span key={c} className="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm">
                 {c}
               </span>
@@ -107,7 +110,7 @@ export default async function SupplierPage({ params }: any) {
         <div>
           <h2 className="text-xl font-semibold mb-3">AI Tags</h2>
           <div className="flex flex-wrap gap-2">
-            {supplier.ai_tags.map((t:any)=>(
+            {supplier.ai_tags.map((t: any) => (
               <span key={t} className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-sm">
                 {t}
               </span>
@@ -120,7 +123,7 @@ export default async function SupplierPage({ params }: any) {
       <div>
         <h2 className="text-xl font-semibold mb-3">Capabilities</h2>
         <div className="flex flex-wrap gap-2">
-          {supplier.capabilities?.map((c:any)=>(
+          {supplier.capabilities?.map((c: any) => (
             <span key={c} className="bg-gray-100 px-3 py-1 rounded text-sm">
               {c}
             </span>
@@ -132,7 +135,7 @@ export default async function SupplierPage({ params }: any) {
       <div>
         <h2 className="text-xl font-semibold mb-3">Keywords Detected</h2>
         <div className="flex flex-wrap gap-2">
-          {supplier.keywords?.map((k:any)=>(
+          {supplier.keywords?.map((k: any) => (
             <span key={k} className="bg-blue-50 px-3 py-1 rounded text-sm">
               {k}
             </span>
