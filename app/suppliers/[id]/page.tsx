@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { Pool } from "pg"
 import SupplierLogo from "../../components/SupplierLogo"
+import { toTitleCase } from "@/lib/utils"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -35,6 +36,21 @@ export default async function SupplierPage(props: any) {
 
   if (!supplier) {
     return <div className="p-10">Supplier not found</div>
+  }
+
+  // 🔗 RELATED SUPPLIERS
+  let relatedSuppliers: any[] = []
+
+  if (supplier?.capabilities?.length > 0) {
+    const relatedResult = await pool.query(`
+      SELECT abn, abn_name, state, postcode, capabilities
+      FROM supplier_profiles
+      WHERE abn != $1
+      AND capabilities && $2
+      LIMIT 6
+    `, [supplier.abn, supplier.capabilities])
+
+    relatedSuppliers = relatedResult.rows
   }
 
   return (
@@ -89,6 +105,16 @@ export default async function SupplierPage(props: any) {
         </div>
       )}
 
+      {/* 🧾 ABOUT */}
+      {supplier.description && (
+        <div>
+          <h2 className="text-xl font-semibold mb-3">About</h2>
+          <p className="text-gray-700 leading-relaxed">
+            {supplier.description}
+          </p>
+        </div>
+      )}
+
       {/* 🏷️ AI CATEGORIES */}
       {supplier.ai_categories?.length > 0 && (
         <div>
@@ -96,7 +122,7 @@ export default async function SupplierPage(props: any) {
           <div className="flex flex-wrap gap-2">
             {supplier.ai_categories.map((c: any) => (
               <span key={c} className="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm">
-                {c}
+                {toTitleCase(c)}
               </span>
             ))}
           </div>
@@ -110,7 +136,7 @@ export default async function SupplierPage(props: any) {
           <div className="flex flex-wrap gap-2">
             {supplier.ai_tags.map((t: any) => (
               <span key={t} className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-sm">
-                {t}
+                {toTitleCase(t)}
               </span>
             ))}
           </div>
@@ -119,11 +145,11 @@ export default async function SupplierPage(props: any) {
 
       {/* CAPABILITIES */}
       <div>
-        <h2 className="text-xl font-semibold mb-3">Capabilities</h2>
+        <h2 className="text-xl font-semibold mb-3">Core Capabilities</h2>
         <div className="flex flex-wrap gap-2">
           {supplier.capabilities?.map((c: any) => (
             <span key={c} className="bg-gray-100 px-3 py-1 rounded text-sm">
-              {c}
+              {toTitleCase(c)}
             </span>
           ))}
         </div>
@@ -135,7 +161,7 @@ export default async function SupplierPage(props: any) {
         <div className="flex flex-wrap gap-2">
           {supplier.keywords?.map((k: any) => (
             <span key={k} className="bg-blue-50 px-3 py-1 rounded text-sm">
-              {k}
+              {toTitleCase(k)}
             </span>
           ))}
         </div>
@@ -150,6 +176,48 @@ export default async function SupplierPage(props: any) {
           <div>GST Registered: {supplier.gst_registered ? "Yes" : "No"}</div>
         </div>
       </div>
+
+      {/* 🔗 RELATED SUPPLIERS */}
+      {relatedSuppliers.length > 0 && (
+        <div className="border-t pt-6">
+          <h2 className="text-xl font-semibold mb-4">Related Suppliers</h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+
+            {relatedSuppliers.map((s: any) => (
+
+              <a
+                key={s.abn}
+                href={`/suppliers/${s.abn}`}
+                className="border rounded-lg p-4 hover:shadow-md transition block"
+              >
+
+                <div className="font-semibold">
+                  {s.abn_name}
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  {s.state} {s.postcode}
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {s.capabilities?.slice(0, 3).map((c: any) => (
+                    <span
+                      key={c}
+                      className="text-xs bg-gray-100 px-2 py-1 rounded"
+                    >
+                      {toTitleCase(c)}
+                    </span>
+                  ))}
+                </div>
+
+              </a>
+
+            ))}
+
+          </div>
+        </div>
+      )}
 
     </main>
   )
