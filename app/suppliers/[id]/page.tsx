@@ -1,3 +1,4 @@
+console.log("🚨 SUPPLIER PAGE HIT")
 export const dynamic = "force-dynamic"
 
 import { Pool } from "pg"
