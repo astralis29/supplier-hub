@@ -34,6 +34,25 @@ export default function SearchBar({
     locations: []
   })
 
+  /* ---------------- 🔥 ABN DETECTION ---------------- */
+
+  function isABN(q:string){
+    return /^\d{11}$/.test(q.trim())
+  }
+
+  function handleSubmit(e:any){
+    const q = query.trim()
+
+    // 🔥 if ABN → go direct to supplier page
+    if(isABN(q)){
+      e.preventDefault()
+      window.location.href = `/suppliers/${q}`
+      return
+    }
+
+    // otherwise allow normal form submit
+  }
+
   /* ---------------- FLATTEN RESULTS ---------------- */
 
   const flatResults: SearchItem[] = [
@@ -65,6 +84,12 @@ export default function SearchBar({
       return
     }
 
+    // 🔥 DO NOT fetch suggestions for ABN
+    if(isABN(query)){
+      setShow(false)
+      return
+    }
+
     const timeout = setTimeout(async ()=>{
 
       const res = await fetch(`/api/search?q=${query}&suggest=true`)
@@ -90,6 +115,12 @@ export default function SearchBar({
   /* ---------------- KEYBOARD NAV ---------------- */
 
   function handleKeyDown(e:any){
+
+    // 🔥 ENTER on ABN → go direct
+    if(e.key === "Enter" && isABN(query)){
+      window.location.href = `/suppliers/${query}`
+      return
+    }
 
     if(!show || flatResults.length === 0) return
 
@@ -130,12 +161,17 @@ export default function SearchBar({
 
   return(
 
-    <form method="GET" action="/search" className="w-full max-w-3xl mx-auto">
+    <form 
+      method="GET" 
+      action="/search" 
+      onSubmit={handleSubmit}  // ✅ ADDED
+      className="w-full max-w-3xl mx-auto"
+    >
 
       <div className="flex bg-white rounded-xl shadow-lg border overflow-hidden">
 
         <input
-          name="q"   // ✅ FIXED
+          name="q"
           value={query}
           onChange={(e)=>setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
