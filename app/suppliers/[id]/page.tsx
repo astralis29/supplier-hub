@@ -24,7 +24,9 @@ export default async function SupplierPage(props: any) {
       abr.abn_status,
       abr.gst_registered,
       abr.postcode,
-      abr.state
+      abr.state,
+      abr.entity_type,
+      abr.registration_date
     FROM supplier_profiles sp
     LEFT JOIN abr_businesses abr
       ON sp.abn = abr.abn
@@ -38,15 +40,30 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">Supplier not found</div>
   }
 
-  // 🔗 RELATED SUPPLIERS
+  // 🔗 RELATED SUPPLIERS (WITH FAVICON DATA + RANKING)
   let relatedSuppliers: any[] = []
 
   if (supplier?.capabilities?.length > 0) {
     const relatedResult = await pool.query(`
-      SELECT abn, abn_name, state, postcode, capabilities
+      SELECT 
+        abn,
+        abn_name,
+        state,
+        postcode,
+        capabilities,
+        domain,
+        favicon_domain,
+        CARDINALITY(
+          ARRAY(
+            SELECT UNNEST(capabilities)
+            INTERSECT
+            SELECT UNNEST($2)
+          )
+        ) AS match_score
       FROM supplier_profiles
       WHERE abn != $1
       AND capabilities && $2
+      ORDER BY match_score DESC
       LIMIT 6
     `, [supplier.abn, supplier.capabilities])
 
@@ -62,7 +79,7 @@ export default async function SupplierPage(props: any) {
 
         <SupplierLogo
           name={supplier.abn_name}
-          website={supplier.domain}
+          website={supplier.favicon_domain || supplier.domain}
           size={80}
         />
 
@@ -172,15 +189,19 @@ export default async function SupplierPage(props: any) {
         <h2 className="text-xl font-semibold mb-3">Business Information</h2>
         <div className="space-y-1 text-gray-600">
           <div>ABN: {supplier.abn}</div>
-          <div>ABN Status: {supplier.abn_status}</div>
-          <div>GST Registered: {supplier.gst_registered ? "Yes" : "No"}</div>
+          <div>Status: {supplier.abn_status}</div>
+          <div>GST: {supplier.gst_registered ? "Yes" : "No"}</div>
+          {supplier.entity_type && <div>Entity Type: {supplier.entity_type}</div>}
+          {supplier.registration_date && <div>Registered: {supplier.registration_date}</div>}
         </div>
       </div>
 
-      {/* 🔗 RELATED SUPPLIERS */}
+      {/* 🔗 RELATED SUPPLIERS (NOW WITH FAVICONS) */}
       {relatedSuppliers.length > 0 && (
         <div className="border-t pt-6">
-          <h2 className="text-xl font-semibold mb-4">Related Suppliers</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Suppliers with Similar Capabilities
+          </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
 
@@ -189,17 +210,36 @@ export default async function SupplierPage(props: any) {
               <a
                 key={s.abn}
                 href={`/suppliers/${s.abn}`}
-                className="border rounded-lg p-4 hover:shadow-md transition block"
+                className="border rounded-lg p-4 hover:shadow-md hover:scale-[1.01] transition block"
               >
 
-                <div className="font-semibold">
-                  {s.abn_name}
+                {/* ✅ HEADER WITH FAVICON */}
+                <div className="flex items-center gap-3">
+
+                  <SupplierLogo
+                    name={s.abn_name}
+                    website={s.favicon_domain || s.domain}
+                    size={40}
+                  />
+
+                  <div>
+                    <div className="font-semibold">
+                      {s.abn_name}
+                    </div>
+
+                    <div className="text-sm text-gray-500">
+                      {s.state} {s.postcode}
+                    </div>
+                  </div>
+
                 </div>
 
-                <div className="text-sm text-gray-500">
-                  {s.state} {s.postcode}
+                {/* MATCH SCORE */}
+                <div className="text-xs text-gray-400 mt-2">
+                  {s.match_score} shared capabilities
                 </div>
 
+                {/* CAPABILITIES */}
                 <div className="flex flex-wrap gap-2 mt-2">
                   {s.capabilities?.slice(0, 3).map((c: any) => (
                     <span
