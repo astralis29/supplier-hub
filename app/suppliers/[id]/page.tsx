@@ -1,4 +1,7 @@
+
 export const dynamic = "force-dynamic"
+export const dynamicParams = true
+
 
 import { Pool } from "pg"
 import SupplierLogo from "../../components/SupplierLogo"
