@@ -1,4 +1,5 @@
 console.log("🚨 SUPPLIER PAGE HIT")
+throw new Error("TEST BUILD")
 export const dynamic = "force-dynamic"
 
 import { Pool } from "pg"
