@@ -10,6 +10,7 @@ export default async function SupplierPage({ params }: any) {
 
   // 🔥 FIX: handle array param edge case
   const abn = Array.isArray(params.abn) ? params.abn[0] : params.abn
+  console.log("DB URL:", process.env.DATABASE_URL)
 
   // 🔍 DEBUG (optional — remove later)
   console.log("PARAMS:", params.abn)
