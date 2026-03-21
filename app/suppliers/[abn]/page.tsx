@@ -9,15 +9,22 @@ const pool = new Pool({
 export default async function SupplierPage({
   params,
 }: {
-  params: { abn: string }
+  params: { abn?: string | string[] }
 }) {
 
-  // ✅ FIXED PARAM HANDLING
-  const abn = params?.abn
+  // 🔥 BULLETPROOF PARAM HANDLING
+  const rawAbn = params?.abn
+  const abn = Array.isArray(rawAbn) ? rawAbn[0] : rawAbn
 
   // 🔍 DEBUG (remove later)
-  console.log("PARAMS:", params)
+  console.log("PARAMS FULL:", params)
+  console.log("RAW ABN:", rawAbn)
   console.log("FINAL ABN:", abn)
+
+  // ❌ HARD STOP IF BROKEN
+  if (!abn) {
+    return <div className="p-10">ABN missing from URL</div>
+  }
 
   const result = await pool.query(`
     SELECT
