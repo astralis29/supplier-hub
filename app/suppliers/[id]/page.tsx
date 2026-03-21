@@ -8,17 +8,10 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 })
 
-export default async function SupplierPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function SupplierPage(props: any) {
 
-  // ✅ FIX — MATCHES [id]
-  const abn = params.id
-
-  console.log("PARAMS:", params)
-  console.log("ABN:", abn)
+  const params = await props.params
+  const abn = params?.id
 
   if (!abn) {
     return <div className="p-10">ABN missing from URL</div>
