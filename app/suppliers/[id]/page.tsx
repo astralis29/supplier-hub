@@ -18,7 +18,7 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">ABN missing from URL</div>
   }
 
-  // 🔥 MAIN SUPPLIER (MORE ABR DATA INCLUDED)
+  // 🔥 MAIN SUPPLIER
   const result = await pool.query(`
     SELECT
       sp.*,
@@ -39,27 +39,60 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">Supplier not found</div>
   }
 
-  // 🔗 RELATED SUPPLIERS (WITH DOMAIN + AI DATA)
+  // 🔗 RELATED SUPPLIERS (SAFE + FALLBACK)
   let relatedSuppliers: any[] = []
 
-  if (supplier?.capabilities?.length > 0) {
-    const relatedResult = await pool.query(`
-      SELECT 
-        abn,
-        abn_name,
-        state,
-        postcode,
-        capabilities,
-        domain,
-        ai_summary,
-        ai_confidence
-      FROM supplier_profiles
-      WHERE abn != $1
-      AND capabilities && $2
-      LIMIT 6
-    `, [supplier.abn, supplier.capabilities])
+  try {
 
-    relatedSuppliers = relatedResult.rows
+    if (supplier?.capabilities?.length > 0) {
+
+      // ✅ PRIMARY: MATCH BY CAPABILITIES
+      const relatedResult = await pool.query(`
+        SELECT 
+          abn,
+          abn_name,
+          state,
+          postcode,
+          capabilities,
+          domain,
+          ai_summary,
+          ai_confidence
+        FROM supplier_profiles
+        WHERE abn != $1
+        AND capabilities IS NOT NULL
+        AND capabilities && $2
+        LIMIT 6
+      `, [supplier.abn, supplier.capabilities])
+
+      relatedSuppliers = relatedResult.rows
+
+    } else if (supplier?.industry || supplier?.sector) {
+
+      // ✅ FALLBACK: MATCH BY INDUSTRY / SECTOR
+      const fallbackResult = await pool.query(`
+        SELECT 
+          abn,
+          abn_name,
+          state,
+          postcode,
+          capabilities,
+          domain,
+          ai_summary,
+          ai_confidence
+        FROM supplier_profiles
+        WHERE abn != $1
+        AND (
+          industry = $2
+          OR sector = $3
+        )
+        LIMIT 6
+      `, [supplier.abn, supplier.industry, supplier.sector])
+
+      relatedSuppliers = fallbackResult.rows
+    }
+
+  } catch (err) {
+    console.error("RELATED SUPPLIERS ERROR:", err)
   }
 
   return (
@@ -71,7 +104,7 @@ export default async function SupplierPage(props: any) {
 
         <SupplierLogo
           name={supplier.abn_name}
-          website={supplier.domain} // ✅ favicon via domain
+          website={supplier.domain || ""}
           size={80}
         />
 
@@ -176,7 +209,7 @@ export default async function SupplierPage(props: any) {
         </div>
       </div>
 
-      {/* 🏢 FULL BUSINESS INFO (EXPANDED ABR) */}
+      {/* 🏢 BUSINESS INFO */}
       <div className="border-t pt-6">
         <h2 className="text-xl font-semibold mb-3">Business Information</h2>
         <div className="space-y-1 text-gray-600">
@@ -190,7 +223,7 @@ export default async function SupplierPage(props: any) {
         </div>
       </div>
 
-      {/* 🔗 RELATED SUPPLIERS (UPGRADED) */}
+      {/* 🔗 RELATED SUPPLIERS */}
       {relatedSuppliers.length > 0 && (
         <div className="border-t pt-6">
           <h2 className="text-xl font-semibold mb-4">
@@ -209,10 +242,9 @@ export default async function SupplierPage(props: any) {
 
                 <div className="flex items-start gap-3">
 
-                  {/* ✅ FAVICON WORKING */}
                   <SupplierLogo
                     name={s.abn_name}
-                    website={s.domain}
+                    website={s.domain || ""}
                     size={40}
                   />
 
@@ -226,20 +258,15 @@ export default async function SupplierPage(props: any) {
                       {s.state} {s.postcode}
                     </div>
 
-                    {/* 🧠 AI PREVIEW */}
                     {s.ai_summary && (
                       <div className="text-xs text-gray-600 mt-1 line-clamp-2">
                         {s.ai_summary}
                       </div>
                     )}
 
-                    {/* CAPABILITIES */}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {s.capabilities?.slice(0, 3).map((c: any) => (
-                        <span
-                          key={c}
-                          className="text-xs bg-gray-100 px-2 py-1 rounded"
-                        >
+                        <span key={c} className="text-xs bg-gray-100 px-2 py-1 rounded">
                           {toTitleCase(c)}
                         </span>
                       ))}
