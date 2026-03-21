@@ -8,7 +8,12 @@ const pool = new Pool({
 
 export default async function SupplierPage({ params }: any) {
 
-  const abn = params.abn
+  // 🔥 FIX: handle array param edge case
+  const abn = Array.isArray(params.abn) ? params.abn[0] : params.abn
+
+  // 🔍 DEBUG (optional — remove later)
+  console.log("PARAMS:", params.abn)
+  console.log("FINAL ABN:", abn)
 
   const result = await pool.query(`
     SELECT
@@ -20,7 +25,7 @@ export default async function SupplierPage({ params }: any) {
     FROM supplier_profiles sp
     LEFT JOIN abr_businesses abr
       ON sp.abn = abr.abn
-    WHERE sp.abn = $1
+    WHERE TRIM(sp.abn) = TRIM($1)  -- 🔥 extra safety
     LIMIT 1
   `,[abn])
 
@@ -66,7 +71,7 @@ export default async function SupplierPage({ params }: any) {
         </div>
       </div>
 
-      {/* 🧠 AI SUMMARY (NEW) */}
+      {/* 🧠 AI SUMMARY */}
       {supplier.ai_summary && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border">
           <h2 className="text-lg font-semibold mb-2">🧠 AI Summary</h2>
@@ -82,7 +87,7 @@ export default async function SupplierPage({ params }: any) {
         </div>
       )}
 
-      {/* 🏷️ AI CATEGORIES (NEW) */}
+      {/* 🏷️ AI CATEGORIES */}
       {supplier.ai_categories?.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold mb-3">AI Categories</h2>
@@ -96,7 +101,7 @@ export default async function SupplierPage({ params }: any) {
         </div>
       )}
 
-      {/* 🏷️ AI TAGS (NEW) */}
+      {/* 🏷️ AI TAGS */}
       {supplier.ai_tags?.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold mb-3">AI Tags</h2>
@@ -110,7 +115,7 @@ export default async function SupplierPage({ params }: any) {
         </div>
       )}
 
-      {/* EXISTING: CAPABILITIES */}
+      {/* CAPABILITIES */}
       <div>
         <h2 className="text-xl font-semibold mb-3">Capabilities</h2>
         <div className="flex flex-wrap gap-2">
@@ -122,7 +127,7 @@ export default async function SupplierPage({ params }: any) {
         </div>
       </div>
 
-      {/* EXISTING: KEYWORDS */}
+      {/* KEYWORDS */}
       <div>
         <h2 className="text-xl font-semibold mb-3">Keywords Detected</h2>
         <div className="flex flex-wrap gap-2">
