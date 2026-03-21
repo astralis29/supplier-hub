@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic"
+
 import { Pool } from "pg"
 import SupplierLogo from "../../components/SupplierLogo"
 
@@ -7,22 +8,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 })
 
-export default async function SupplierPage({
-  params,
-}: {
-  params: { abn?: string | string[] }
-}) {
+export default async function SupplierPage(
+  props: {
+    params: { abn: string }
+  }
+) {
 
-  // 🔥 BULLETPROOF PARAM HANDLING
-  const rawAbn = params?.abn
-  const abn = Array.isArray(rawAbn) ? rawAbn[0] : rawAbn
+  const abn = props.params?.abn
 
-  // 🔍 DEBUG (remove later)
-  console.log("PARAMS FULL:", params)
-  console.log("RAW ABN:", rawAbn)
+  console.log("FULL PROPS:", props)
+  console.log("PARAMS:", props.params)
   console.log("FINAL ABN:", abn)
 
-  // ❌ HARD STOP IF BROKEN
   if (!abn) {
     return <div className="p-10">ABN missing from URL</div>
   }
@@ -48,10 +45,8 @@ export default async function SupplierPage({
   }
 
   return (
-
     <main className="max-w-5xl mx-auto p-8 space-y-8">
 
-      {/* HEADER */}
       <div className="flex items-start gap-6">
 
         <SupplierLogo
@@ -61,7 +56,6 @@ export default async function SupplierPage({
         />
 
         <div>
-
           <h1 className="text-3xl font-bold">
             {supplier.abn_name}
           </h1>
@@ -79,89 +73,18 @@ export default async function SupplierPage({
               🌐 {supplier.website}
             </a>
           )}
-
         </div>
       </div>
 
-      {/* 🧠 AI SUMMARY */}
       {supplier.ai_summary && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border">
           <h2 className="text-lg font-semibold mb-2">🧠 AI Summary</h2>
           <p className="text-gray-700 leading-relaxed">
             {supplier.ai_summary}
           </p>
-
-          {supplier.ai_confidence && (
-            <div className="text-xs text-gray-500 mt-2">
-              Confidence: {(supplier.ai_confidence * 100).toFixed(0)}%
-            </div>
-          )}
         </div>
       )}
-
-      {/* 🏷️ AI CATEGORIES */}
-      {supplier.ai_categories?.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-3">AI Categories</h2>
-          <div className="flex flex-wrap gap-2">
-            {supplier.ai_categories.map((c: any) => (
-              <span key={c} className="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm">
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 🏷️ AI TAGS */}
-      {supplier.ai_tags?.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-3">AI Tags</h2>
-          <div className="flex flex-wrap gap-2">
-            {supplier.ai_tags.map((t: any) => (
-              <span key={t} className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-sm">
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* CAPABILITIES */}
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Capabilities</h2>
-        <div className="flex flex-wrap gap-2">
-          {supplier.capabilities?.map((c: any) => (
-            <span key={c} className="bg-gray-100 px-3 py-1 rounded text-sm">
-              {c}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* KEYWORDS */}
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Keywords Detected</h2>
-        <div className="flex flex-wrap gap-2">
-          {supplier.keywords?.map((k: any) => (
-            <span key={k} className="bg-blue-50 px-3 py-1 rounded text-sm">
-              {k}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* BUSINESS INFO */}
-      <div className="border-t pt-6">
-        <h2 className="text-xl font-semibold mb-3">Business Information</h2>
-        <div className="space-y-1 text-gray-600">
-          <div>ABN: {supplier.abn}</div>
-          <div>ABN Status: {supplier.abn_status}</div>
-          <div>GST Registered: {supplier.gst_registered ? "Yes" : "No"}</div>
-        </div>
-      </div>
 
     </main>
-
   )
 }
