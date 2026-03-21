@@ -1,7 +1,4 @@
-
 export const dynamic = "force-dynamic"
-export const dynamicParams = true
-
 
 import { Pool } from "pg"
 import SupplierLogo from "../../components/SupplierLogo"
@@ -11,17 +8,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 })
 
-export default async function SupplierPage(
-  props: {
-    params: { abn: string }
-  }
-) {
-  const abn = props?.params?.abn
+export default async function SupplierPage({
+  params,
+}: {
+  params: { id: string }
+}) {
 
-  console.log("PARAMS:", props.params)
-  console.log("FINAL ABN:", abn)
+  // ✅ FIX — MATCHES [id]
+  const abn = params.id
 
-  // 🚨 HARD FAIL CHECK
+  console.log("PARAMS:", params)
+  console.log("ABN:", abn)
+
   if (!abn) {
     return <div className="p-10">ABN missing from URL</div>
   }
@@ -47,10 +45,12 @@ export default async function SupplierPage(
   }
 
   return (
+
     <main className="max-w-5xl mx-auto p-8 space-y-8">
 
       {/* HEADER */}
       <div className="flex items-start gap-6">
+
         <SupplierLogo
           name={supplier.abn_name}
           website={supplier.domain}
@@ -58,6 +58,7 @@ export default async function SupplierPage(
         />
 
         <div>
+
           <h1 className="text-3xl font-bold">
             {supplier.abn_name}
           </h1>
@@ -75,10 +76,11 @@ export default async function SupplierPage(
               🌐 {supplier.website}
             </a>
           )}
+
         </div>
       </div>
 
-      {/* AI SUMMARY */}
+      {/* 🧠 AI SUMMARY */}
       {supplier.ai_summary && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border">
           <h2 className="text-lg font-semibold mb-2">🧠 AI Summary</h2>
@@ -94,7 +96,7 @@ export default async function SupplierPage(
         </div>
       )}
 
-      {/* AI CATEGORIES */}
+      {/* 🏷️ AI CATEGORIES */}
       {supplier.ai_categories?.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold mb-3">AI Categories</h2>
@@ -108,7 +110,7 @@ export default async function SupplierPage(
         </div>
       )}
 
-      {/* AI TAGS */}
+      {/* 🏷️ AI TAGS */}
       {supplier.ai_tags?.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold mb-3">AI Tags</h2>
