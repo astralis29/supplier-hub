@@ -18,6 +18,7 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">ABN missing from URL</div>
   }
 
+  // 🔥 MAIN SUPPLIER (MORE ABR DATA INCLUDED)
   const result = await pool.query(`
     SELECT
       sp.*,
@@ -38,7 +39,7 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">Supplier not found</div>
   }
 
-  // 🔗 RELATED SUPPLIERS (ranked by overlap)
+  // 🔗 RELATED SUPPLIERS (WITH DOMAIN + AI DATA)
   let relatedSuppliers: any[] = []
 
   if (supplier?.capabilities?.length > 0) {
@@ -50,17 +51,11 @@ export default async function SupplierPage(props: any) {
         postcode,
         capabilities,
         domain,
-        CARDINALITY(
-          ARRAY(
-            SELECT UNNEST(capabilities)
-            INTERSECT
-            SELECT UNNEST($2)
-          )
-        ) AS match_score
+        ai_summary,
+        ai_confidence
       FROM supplier_profiles
       WHERE abn != $1
       AND capabilities && $2
-      ORDER BY match_score DESC
       LIMIT 6
     `, [supplier.abn, supplier.capabilities])
 
@@ -76,7 +71,7 @@ export default async function SupplierPage(props: any) {
 
         <SupplierLogo
           name={supplier.abn_name}
-          website={supplier.domain}
+          website={supplier.domain} // ✅ favicon via domain
           size={80}
         />
 
@@ -181,17 +176,21 @@ export default async function SupplierPage(props: any) {
         </div>
       </div>
 
-      {/* BUSINESS INFO */}
+      {/* 🏢 FULL BUSINESS INFO (EXPANDED ABR) */}
       <div className="border-t pt-6">
         <h2 className="text-xl font-semibold mb-3">Business Information</h2>
         <div className="space-y-1 text-gray-600">
-          <div>ABN: {supplier.abn}</div>
-          <div>ABN Status: {supplier.abn_status}</div>
-          <div>GST Registered: {supplier.gst_registered ? "Yes" : "No"}</div>
+          <div><strong>ABN:</strong> {supplier.abn}</div>
+          <div><strong>Status:</strong> {supplier.abn_status}</div>
+          <div><strong>GST:</strong> {supplier.gst_registered ? "Registered" : "Not Registered"}</div>
+          <div><strong>Location:</strong> {supplier.state} {supplier.postcode}</div>
+          {supplier.country && <div><strong>Country:</strong> {supplier.country}</div>}
+          {supplier.industry && <div><strong>Industry:</strong> {supplier.industry}</div>}
+          {supplier.sector && <div><strong>Sector:</strong> {supplier.sector}</div>}
         </div>
       </div>
 
-      {/* 🔗 RELATED SUPPLIERS */}
+      {/* 🔗 RELATED SUPPLIERS (UPGRADED) */}
       {relatedSuppliers.length > 0 && (
         <div className="border-t pt-6">
           <h2 className="text-xl font-semibold mb-4">
@@ -210,13 +209,14 @@ export default async function SupplierPage(props: any) {
 
                 <div className="flex items-start gap-3">
 
+                  {/* ✅ FAVICON WORKING */}
                   <SupplierLogo
                     name={s.abn_name}
                     website={s.domain}
                     size={40}
                   />
 
-                  <div>
+                  <div className="flex-1">
 
                     <div className="font-semibold">
                       {s.abn_name}
@@ -226,6 +226,14 @@ export default async function SupplierPage(props: any) {
                       {s.state} {s.postcode}
                     </div>
 
+                    {/* 🧠 AI PREVIEW */}
+                    {s.ai_summary && (
+                      <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                        {s.ai_summary}
+                      </div>
+                    )}
+
+                    {/* CAPABILITIES */}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {s.capabilities?.slice(0, 3).map((c: any) => (
                         <span
