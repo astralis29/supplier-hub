@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"
 import { Pool } from "pg"
 import SupplierLogo from "../../components/SupplierLogo"
 
