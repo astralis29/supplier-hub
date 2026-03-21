@@ -8,16 +8,20 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 })
 
-export default async function SupplierPage(
-  props: {
-    params: { abn: string }
-  }
-) {
+type PageProps = {
+  params?: { abn?: string }
+  searchParams?: { abn?: string }
+}
 
-  const abn = props.params?.abn
+export default async function SupplierPage(props: PageProps) {
 
-  console.log("FULL PROPS:", props)
-  console.log("PARAMS:", props.params)
+  // 🔥 MULTI-SOURCE PARAM FIX (THIS IS THE KEY)
+  const abn =
+    props?.params?.abn ||
+    props?.searchParams?.abn ||
+    null
+
+  console.log("PROPS:", props)
   console.log("FINAL ABN:", abn)
 
   if (!abn) {
@@ -48,7 +52,6 @@ export default async function SupplierPage(
     <main className="max-w-5xl mx-auto p-8 space-y-8">
 
       <div className="flex items-start gap-6">
-
         <SupplierLogo
           name={supplier.abn_name}
           website={supplier.domain}
