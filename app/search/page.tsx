@@ -18,11 +18,9 @@ function SearchContent(){
 
   const [cursorStack, setCursorStack] = useState<string[]>([])
 
-  // ✅ FIX: READ FROM URL
   const urlQuery = searchParams.get("q") || ""
   const country = searchParams.get("country")
 
-  // ✅ SYNC URL → INPUT
   useEffect(() => {
     setQuery(urlQuery)
     setCursor(null)
@@ -45,7 +43,6 @@ function SearchContent(){
 
     const params = new URLSearchParams()
 
-    // ✅ ALWAYS USE q FROM STATE
     if(query) params.append("q",query)
     if(country) params.append("country",country)
     if(cursor) params.append("cursor",cursor)
@@ -158,6 +155,44 @@ function SearchContent(){
               <div className="text-xs text-gray-500">
                 ABN: {supplier.abn}
               </div>
+
+              {/* 🔥 AI CATEGORIES */}
+              {supplier.ai_categories?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {supplier.ai_categories.slice(0,3).map((c:any)=>(
+                    <span
+                      key={c}
+                      onClick={()=>{
+                        setQuery(c)
+                        setCursor(null)
+                        setCursorStack([])
+                      }}
+                      className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs cursor-pointer hover:bg-purple-200"
+                    >
+                      {toTitleCase(c)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* 🔥 AI TAGS */}
+              {supplier.ai_tags?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {supplier.ai_tags.slice(0,3).map((t:any)=>(
+                    <span
+                      key={t}
+                      onClick={()=>{
+                        setQuery(t)
+                        setCursor(null)
+                        setCursorStack([])
+                      }}
+                      className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs cursor-pointer hover:bg-indigo-200"
+                    >
+                      {toTitleCase(t)}
+                    </span>
+                  ))}
+                </div>
+              )}
 
             </div>
 
