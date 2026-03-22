@@ -14,25 +14,58 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 })
 
+/* ---------------- NORMALISER (CRITICAL FIX) ---------------- */
+
+function normalizeToArray(input) {
+  if (!input) return []
+
+  if (Array.isArray(input)) return input
+
+  if (typeof input === "object") {
+    return Object.values(input).flat()
+  }
+
+  if (typeof input === "string") {
+    return [input]
+  }
+
+  return []
+}
+
 /* ---------------- JUNK FILTER ---------------- */
 
 function isJunkContent(text, url) {
   const lower = text.toLowerCase()
 
   const junkSignals = [
-    "domain for sale","buy this domain","this domain is for sale",
-    "parked domain","domain parking","hugedomains","sedo","godaddy",
-    "afternic","dan.com","namecheap parking","parkingcrew"
+    "domain for sale","this domain is for sale","buy this domain",
+    "make an offer","listed for sale","purchase this domain",
+    "sedo","hugedomains","godaddy","afternic","dan.com",
+    "namecheap parking","parkingcrew","saw.com",
+    "parked domain","domain parking","cashparking","bodis parking",
+    "secure domain purchase","escrow service"
   ]
 
-  if (junkSignals.some(s => lower.includes(s))) return true
+  if (junkSignals.some(s => lower.includes(s))) {
+    console.log("🧨 Junk detected (content):", url)
+    return true
+  }
 
   const junkDomains = [
     "bing.com","google.com","yahoo.com",
-    "hugedomains.com","sedo.com"
+    "sedo.com","hugedomains.com","godaddy.com",
+    "dan.com","afternic.com","saw.com"
   ]
 
-  if (junkDomains.some(d => url.includes(d))) return true
+  if (junkDomains.some(d => url.includes(d))) {
+    console.log("🧨 Junk detected (domain):", url)
+    return true
+  }
+
+  if (text.length < 300) {
+    console.log("🧨 Junk detected (too small):", url)
+    return true
+  }
 
   return false
 }
@@ -48,26 +81,7 @@ function isBadAIOutput(summary) {
   return badSignals.some(s => summary.toLowerCase().includes(s))
 }
 
-/* ---------------- CERT VALIDATION (FIXED) ---------------- */
-
-function isValidCertification(text, cert) {
-  const lower = text.toLowerCase()
-
-  const negativeSignals = [
-    "working towards",
-    "seeking",
-    "aim to",
-    "plan to",
-    "in progress"
-  ]
-
-  if (negativeSignals.some(s => lower.includes(s))) return false
-
-  // ✅ CRITICAL FIX: allow AI-derived certifications
-  return true
-}
-
-/* ---------------- 🔥 SUPER REGEX ISO ENGINE ---------------- */
+/* ---------------- ISO EXTRACTION ---------------- */
 
 function extractISOs(text) {
   const matches = text.match(/ISO[\s\-:]?\d{4,5}/gi)
@@ -77,13 +91,20 @@ function extractISOs(text) {
   return [
     ...new Set(
       matches.map(m =>
-        m
-          .toUpperCase()
-          .replace(/[\s\-:]+/g, " ")
-          .trim()
+        m.toUpperCase().replace(/[\s\-:]+/g, " ").trim()
       )
     )
   ]
+}
+
+/* ---------------- MARK FAILED ---------------- */
+
+async function markFailed(abn) {
+  await pool.query(`
+    UPDATE supplier_profiles
+    SET ai_last_enriched = NOW()
+    WHERE abn = $1
+  `, [abn])
 }
 
 /* ---------------- DB FETCH ---------------- */
@@ -93,7 +114,7 @@ async function getSuppliers() {
     SELECT abn, website
     FROM supplier_profiles
     WHERE website IS NOT NULL
-    AND ai_summary IS NULL
+    AND ai_last_enriched IS NULL
     AND website LIKE 'http%'
     LIMIT 5
   `)
@@ -152,59 +173,86 @@ Extract:
 3. Tags
 4. Certifications (ONLY if explicitly stated as certified)
 
-Rules:
-- Only include REAL certifications
-- Ignore "working towards"
-- Ignore plans
-
-Return STRICT JSON:
-
-{
-  "summary": "business description",
-  "categories": [],
-  "tags": [],
-  "certifications": [],
-  "confidence": 0.0
-}
+Return JSON only.
 
 Content:
 ${text}
 `
           }
-        ],
-        text: { format: { type: "json_object" } }
+        ]
       })
     })
 
     const data = await response.json()
 
-    const message = data.output?.find(o => o.type === "message")
+    let rawText = null
 
-    let textOutput = null
-
-    if (message?.content) {
-      for (const item of message.content) {
-        if (item.text) {
-          textOutput = item.text
-          break
-        }
+    if (Array.isArray(data.output)) {
+      const msg = data.output.find(o => o.type === "message")
+      if (msg?.content?.length) {
+        rawText = msg.content[0].text
       }
     }
 
-    if (!textOutput) throw new Error("No AI output")
+    if (!rawText) {
+      console.error("❌ No AI text:", JSON.stringify(data, null, 2))
+      return null
+    }
 
-    const parsed = JSON.parse(textOutput)
+    let parsed = null
 
-    if (!parsed.summary) return null
+    try {
+      const match = rawText.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error("No JSON found")
+
+      parsed = JSON.parse(match[0])
+    } catch (err) {
+      console.error("❌ JSON EXTRACT FAIL:", rawText)
+      return null
+    }
+
+    /* ---------------- NORMALISE (FIXED) ---------------- */
+
+    parsed.summary =
+      parsed.summary ||
+      parsed.business_summary ||
+      parsed["business summary"] ||
+      parsed["Business summary"] ||
+      null
+
+    parsed.categories = normalizeToArray(
+      parsed.categories || parsed.Categories
+    )
+
+    parsed.tags = normalizeToArray(
+      parsed.tags || parsed.Tags
+    )
+
+    parsed.certifications = parsed.certifications || parsed.Certifications || []
+
+    if (!parsed.summary) {
+      console.error("❌ Missing summary:", parsed)
+      return null
+    }
+
     if (isBadAIOutput(parsed.summary)) return null
 
-    /* ---------------- 🔥 MERGE AI + REGEX ---------------- */
+    const summaryLower = parsed.summary.toLowerCase()
+
+    if (
+      summaryLower.includes("domain for sale") ||
+      summaryLower.includes("listed for sale") ||
+      summaryLower.includes("make an offer")
+    ) {
+      console.log("🧨 AI detected parked domain → skipping")
+      return null
+    }
 
     const regexCerts = extractISOs(text)
 
     parsed.certifications = [
       ...new Set([
-        ...(parsed.certifications || []),
+        ...parsed.certifications,
         ...regexCerts
       ])
     ]
@@ -221,6 +269,7 @@ ${text}
       return enrichWithAI(text, retries - 1)
     }
 
+    console.error("❌ AI ERROR:", err.message)
     return null
   }
 }
@@ -228,6 +277,10 @@ ${text}
 /* ---------------- SAVE ---------------- */
 
 async function saveEnrichment(abn, ai, rawText) {
+
+  // 🔥 EXTRA SAFETY
+  if (!Array.isArray(ai.categories)) ai.categories = []
+  if (!Array.isArray(ai.tags)) ai.tags = []
 
   await pool.query(`
     UPDATE supplier_profiles
@@ -246,27 +299,49 @@ async function saveEnrichment(abn, ai, rawText) {
     abn
   ])
 
-  const certifications = ai.certifications || []
+  let certifications = []
 
-  for (const cert of certifications) {
+  if (Array.isArray(ai.certifications)) {
+    certifications = ai.certifications
+  } else if (typeof ai.certifications === "string") {
+    certifications = [ai.certifications]
+  }
 
-    if (!isValidCertification(rawText, cert)) continue
+  console.log("🛡️ Certifications to save:", certifications)
+
+  for (let cert of certifications) {
+
+    if (!cert || typeof cert !== "string") continue
+
+    const cleanCert = cert
+      .replace(/[\n\r\t]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+
+    console.log("➡️ Saving cert:", cleanCert)
 
     let confidence = 0.6
 
-    if (certifications.includes(cert)) confidence += 0.2
-    if (extractISOs(rawText).includes(cert)) confidence += 0.2
+    if (extractISOs(rawText).includes(cleanCert)) {
+      confidence += 0.2
+    }
 
-    await pool.query(`
-      INSERT INTO supplier_certifications (abn, standard, source, confidence)
-      VALUES ($1, $2, $3, $4)
-      ON CONFLICT DO NOTHING
-    `, [
-      abn,
-      cert,
-      "ai+regex",
-      Math.min(confidence, 1)
-    ])
+    try {
+      await pool.query(`
+        INSERT INTO supplier_certifications (abn, standard, source, confidence)
+        VALUES ($1, $2, $3, $4)
+      `, [
+        String(abn).trim(),
+        cleanCert,
+        "ai",
+        Math.min(confidence, 1)
+      ])
+
+      console.log("✅ Saved cert:", cleanCert)
+
+    } catch (err) {
+      console.error("❌ INSERT ERROR:", cleanCert, err.message)
+    }
   }
 }
 
@@ -279,6 +354,7 @@ async function run() {
     const suppliers = await getSuppliers()
 
     if (suppliers.length === 0) {
+      console.log("⏳ No suppliers left, waiting...")
       await new Promise(r => setTimeout(r, 10000))
       continue
     }
@@ -287,12 +363,26 @@ async function run() {
       console.log("⚙️ Enriching:", supplier.abn)
 
       const text = await scrapeWebsite(supplier.website)
-      if (!text) continue
 
-      if (isJunkContent(text, supplier.website)) continue
+      if (!text) {
+        console.log("❌ No text:", supplier.abn)
+        await markFailed(supplier.abn)
+        continue
+      }
+
+      if (isJunkContent(text, supplier.website)) {
+        console.log("❌ Junk site:", supplier.abn)
+        await markFailed(supplier.abn)
+        continue
+      }
 
       const ai = await enrichWithAI(text)
-      if (!ai) continue
+
+      if (!ai) {
+        console.log("❌ AI FAILED or SKIPPED:", supplier.abn)
+        await markFailed(supplier.abn)
+        continue
+      }
 
       await saveEnrichment(supplier.abn, ai, text)
 
