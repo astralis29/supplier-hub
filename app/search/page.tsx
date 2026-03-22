@@ -77,6 +77,12 @@ function SearchContent(){
     setCursorStack(newStack)
   }
 
+  function handleSearchClick(value: string){
+    setQuery(value)
+    setCursor(null)
+    setCursorStack([])
+  }
+
   return (
 
     <main className="max-w-6xl mx-auto p-8 space-y-8">
@@ -156,13 +162,14 @@ function SearchContent(){
                 ABN: {supplier.abn}
               </div>
 
-              {/* 🛡️ ISO BADGES (NEW) */}
+              {/* 🛡️ CERTIFICATIONS (CLICKABLE NOW) */}
               {supplier.certifications?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {supplier.certifications.slice(0,3).map((cert:string)=>(
                     <span
                       key={cert}
-                      className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded"
+                      onClick={()=>handleSearchClick(cert)}
+                      className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded cursor-pointer hover:bg-green-100"
                     >
                       🛡️ {cert}
                     </span>
@@ -176,11 +183,7 @@ function SearchContent(){
                   {supplier.ai_categories.slice(0,3).map((c:any)=>(
                     <span
                       key={c}
-                      onClick={()=>{
-                        setQuery(c)
-                        setCursor(null)
-                        setCursorStack([])
-                      }}
+                      onClick={()=>handleSearchClick(c)}
                       className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs cursor-pointer hover:bg-purple-200"
                     >
                       {toTitleCase(c)}
@@ -195,11 +198,7 @@ function SearchContent(){
                   {supplier.ai_tags.slice(0,3).map((t:any)=>(
                     <span
                       key={t}
-                      onClick={()=>{
-                        setQuery(t)
-                        setCursor(null)
-                        setCursorStack([])
-                      }}
+                      onClick={()=>handleSearchClick(t)}
                       className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs cursor-pointer hover:bg-indigo-200"
                     >
                       {toTitleCase(t)}

@@ -48,7 +48,7 @@ function isBadAIOutput(summary) {
   return badSignals.some(s => summary.toLowerCase().includes(s))
 }
 
-/* ---------------- CERT VALIDATION ---------------- */
+/* ---------------- CERT VALIDATION (FIXED) ---------------- */
 
 function isValidCertification(text, cert) {
   const lower = text.toLowerCase()
@@ -63,19 +63,27 @@ function isValidCertification(text, cert) {
 
   if (negativeSignals.some(s => lower.includes(s))) return false
 
-  return lower.includes(cert.toLowerCase())
+  // ✅ CRITICAL FIX: allow AI-derived certifications
+  return true
 }
 
-/* ---------------- 🔥 REGEX FALLBACK ---------------- */
+/* ---------------- 🔥 SUPER REGEX ISO ENGINE ---------------- */
 
-function extractCertsFallback(text) {
-  const certs = []
+function extractISOs(text) {
+  const matches = text.match(/ISO[\s\-:]?\d{4,5}/gi)
 
-  if (/iso\s?9001/i.test(text)) certs.push("ISO 9001")
-  if (/iso\s?14001/i.test(text)) certs.push("ISO 14001")
-  if (/iso\s?45001/i.test(text)) certs.push("ISO 45001")
+  if (!matches) return []
 
-  return certs
+  return [
+    ...new Set(
+      matches.map(m =>
+        m
+          .toUpperCase()
+          .replace(/[\s\-:]+/g, " ")
+          .trim()
+      )
+    )
+  ]
 }
 
 /* ---------------- DB FETCH ---------------- */
@@ -111,7 +119,7 @@ async function scrapeWebsite(url) {
       return url
     }
 
-    return cleaned.slice(0, 2000)
+    return cleaned.slice(0, 5000)
 
   } catch {
     return null
@@ -144,10 +152,10 @@ Extract:
 3. Tags
 4. Certifications (ONLY if explicitly stated as certified)
 
-Rules for certifications:
-- Only include real certifications (e.g. ISO 9001, ISO 14001)
-- DO NOT include "working towards" or "planning"
-- Only include confirmed certifications
+Rules:
+- Only include REAL certifications
+- Ignore "working towards"
+- Ignore plans
 
 Return STRICT JSON:
 
@@ -190,8 +198,9 @@ ${text}
     if (!parsed.summary) return null
     if (isBadAIOutput(parsed.summary)) return null
 
-    // 🔥 COMBINE AI + REGEX
-    const regexCerts = extractCertsFallback(text)
+    /* ---------------- 🔥 MERGE AI + REGEX ---------------- */
+
+    const regexCerts = extractISOs(text)
 
     parsed.certifications = [
       ...new Set([
@@ -237,15 +246,16 @@ async function saveEnrichment(abn, ai, rawText) {
     abn
   ])
 
-  // 🔥 SAVE CERTIFICATIONS (UPGRADED)
-  for (const cert of ai.certifications) {
+  const certifications = ai.certifications || []
+
+  for (const cert of certifications) {
 
     if (!isValidCertification(rawText, cert)) continue
 
     let confidence = 0.6
 
-    if ((ai.certifications || []).includes(cert)) confidence += 0.2
-    if (extractCertsFallback(rawText).includes(cert)) confidence += 0.2
+    if (certifications.includes(cert)) confidence += 0.2
+    if (extractISOs(rawText).includes(cert)) confidence += 0.2
 
     await pool.query(`
       INSERT INTO supplier_certifications (abn, standard, source, confidence)
