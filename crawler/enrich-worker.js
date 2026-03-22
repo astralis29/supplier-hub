@@ -5,9 +5,6 @@ dotenv.config({
   path: path.join(process.cwd(), ".env.local")
 })
 
-console.log("DB URL:", process.env.DATABASE_URL ? "LOADED ✅" : "MISSING ❌")
-console.log("OPENAI KEY:", process.env.OPENAI_API_KEY ? "LOADED ✅" : "MISSING ❌")
-
 import { Pool } from "pg"
 import fetch from "node-fetch"
 
@@ -28,20 +25,14 @@ function isJunkContent(text, url) {
     "afternic","dan.com","namecheap parking","parkingcrew"
   ]
 
-  if (junkSignals.some(s => lower.includes(s))) {
-    console.log("🚫 Junk detected (content)")
-    return true
-  }
+  if (junkSignals.some(s => lower.includes(s))) return true
 
   const junkDomains = [
     "bing.com","google.com","yahoo.com",
     "hugedomains.com","sedo.com"
   ]
 
-  if (junkDomains.some(d => url.includes(d))) {
-    console.log("🚫 Junk domain:", url)
-    return true
-  }
+  if (junkDomains.some(d => url.includes(d))) return true
 
   return false
 }
@@ -55,6 +46,24 @@ function isBadAIOutput(summary) {
   ]
 
   return badSignals.some(s => summary.toLowerCase().includes(s))
+}
+
+/* ---------------- CERT VALIDATION ---------------- */
+
+function isValidCertification(text, cert) {
+  const lower = text.toLowerCase()
+
+  const negativeSignals = [
+    "working towards",
+    "seeking",
+    "aim to",
+    "plan to",
+    "in progress"
+  ]
+
+  if (negativeSignals.some(s => lower.includes(s))) return false
+
+  return lower.includes(cert.toLowerCase())
 }
 
 /* ---------------- DB FETCH ---------------- */
@@ -76,8 +85,6 @@ async function getSuppliers() {
 
 async function scrapeWebsite(url) {
   try {
-    console.log("🌐 Scraping:", url)
-
     const res = await fetch(url, { timeout: 10000 })
     const html = await res.text()
 
@@ -89,14 +96,12 @@ async function scrapeWebsite(url) {
       .trim()
 
     if (!cleaned || cleaned.length < 50) {
-      console.log("⚠️ JS site fallback → using URL")
       return url
     }
 
     return cleaned.slice(0, 2000)
 
-  } catch (err) {
-    console.log("❌ Scrape failed:", url)
+  } catch {
     return null
   }
 }
@@ -121,33 +126,24 @@ async function enrichWithAI(text, retries = 2) {
             content: `
 You are a supply chain intelligence engine.
 
-Your job is to identify what a REAL business does.
+Extract:
+1. Business summary
+2. Categories
+3. Tags
+4. Certifications (ONLY if explicitly stated as certified)
 
-IGNORE:
-- code, scripts, CSS
-- tracking, metadata
-- boilerplate website content
+Rules for certifications:
+- Only include real certifications (e.g. ISO 9001, ISO 14001)
+- DO NOT include "working towards" or "planning"
+- Only include confirmed certifications
 
-FOCUS ONLY ON:
-- products
-- services
-- industry
-
-If content is weak or unclear:
-infer from the domain name.
-
-If NOT a real business:
-return summary = null.
-
-Allowed categories:
-["Manufacturing","Logistics","Construction","IT Services","Healthcare","Finance","Retail","Marketing","Legal"]
-
-Return STRICT JSON ONLY:
+Return STRICT JSON:
 
 {
-  "summary": "clear business description",
-  "categories": ["industry"],
-  "tags": ["keywords"],
+  "summary": "business description",
+  "categories": [],
+  "tags": [],
+  "certifications": ["ISO 9001"],
   "confidence": 0.0
 }
 
@@ -179,37 +175,29 @@ ${text}
 
     const parsed = JSON.parse(textOutput)
 
-    if (!parsed.summary) {
-      console.log("⚠️ Empty summary")
-      return null
-    }
+    if (!parsed.summary) return null
+    if (isBadAIOutput(parsed.summary)) return null
 
-    if (isBadAIOutput(parsed.summary)) {
-      console.log("🚫 Bad AI output detected")
-      return null
-    }
-
+    parsed.certifications = parsed.certifications || []
     parsed.confidence = parsed.confidence || 0.6
-
-    console.log("✅ AI RESULT:", parsed.summary)
 
     return parsed
 
   } catch (err) {
 
     if (retries > 0) {
-      console.log("🔁 Retrying AI...", retries)
       return enrichWithAI(text, retries - 1)
     }
 
-    console.log("❌ AI ERROR:", err.message)
     return null
   }
 }
 
 /* ---------------- SAVE ---------------- */
 
-async function saveEnrichment(abn, ai) {
+async function saveEnrichment(abn, ai, rawText) {
+
+  // Save main AI data
   await pool.query(`
     UPDATE supplier_profiles
     SET 
@@ -226,6 +214,23 @@ async function saveEnrichment(abn, ai) {
     ai.confidence,
     abn
   ])
+
+  // Save certifications (NEW)
+  for (const cert of ai.certifications) {
+
+    if (!isValidCertification(rawText, cert)) continue
+
+    await pool.query(`
+      INSERT INTO supplier_certifications (abn, standard, source, confidence)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT DO NOTHING
+    `, [
+      abn,
+      cert,
+      "ai_website",
+      0.7
+    ])
+  }
 }
 
 /* ---------------- MAIN LOOP ---------------- */
@@ -237,7 +242,6 @@ async function run() {
     const suppliers = await getSuppliers()
 
     if (suppliers.length === 0) {
-      console.log("😴 Sleeping...")
       await new Promise(r => setTimeout(r, 10000))
       continue
     }
@@ -253,7 +257,7 @@ async function run() {
       const ai = await enrichWithAI(text)
       if (!ai) continue
 
-      await saveEnrichment(supplier.abn, ai)
+      await saveEnrichment(supplier.abn, ai, text)
 
       console.log("✅ Saved:", supplier.abn)
 
