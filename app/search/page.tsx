@@ -156,6 +156,20 @@ function SearchContent(){
                 ABN: {supplier.abn}
               </div>
 
+              {/* 🛡️ ISO BADGES (NEW) */}
+              {supplier.certifications?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {supplier.certifications.slice(0,3).map((cert:string)=>(
+                    <span
+                      key={cert}
+                      className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded"
+                    >
+                      🛡️ {cert}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {/* 🔥 AI CATEGORIES */}
               {supplier.ai_categories?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">

@@ -54,10 +54,17 @@ export async function GET(req: Request) {
         sp.capabilities,
         sp.industry,
 
-        -- 🔥 AI FIELDS INCLUDED
+        -- 🔥 AI FIELDS
         sp.ai_summary,
         sp.ai_tags,
         sp.ai_categories,
+
+        -- 🛡️ ISO CERTIFICATIONS (ADDED)
+        (
+          SELECT array_agg(sc.standard)
+          FROM supplier_certifications sc
+          WHERE sc.abn = sp.abn
+        ) AS certifications,
 
         abr.abn_status,
         abr.gst_registered,
@@ -79,7 +86,7 @@ export async function GET(req: Request) {
 
       FROM supplier_profiles sp
       LEFT JOIN abr_businesses abr
-      ON sp.abn = abr.abn
+        ON sp.abn = abr.abn
 
       WHERE
       (
@@ -105,6 +112,13 @@ export async function GET(req: Request) {
         OR EXISTS (
           SELECT 1 FROM unnest(sp.ai_tags) t
           WHERE t ILIKE $1
+        )
+
+        -- 🛡️ ISO / CERTIFICATIONS
+        OR EXISTS (
+          SELECT 1 FROM supplier_certifications sc
+          WHERE sc.abn = sp.abn
+          AND sc.standard ILIKE $1
         )
       )
     `
@@ -141,32 +155,40 @@ export async function GET(req: Request) {
       index++
     }
 
-    /* ---------- 🔥 SMART AI RANKING ---------- */
+    /* ---------- 🔥 SMART RANKING (ISO BOOSTED) ---------- */
 
     query += `
       ORDER BY
         CASE
-          WHEN sp.abn_name ILIKE $1 THEN 1
+
+          -- 🛡️ ISO MATCHES FIRST
+          WHEN EXISTS (
+            SELECT 1 FROM supplier_certifications sc
+            WHERE sc.abn = sp.abn
+            AND sc.standard ILIKE $1
+          ) THEN 1
+
+          WHEN sp.abn_name ILIKE $1 THEN 2
 
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.capabilities) c WHERE c ILIKE $1
-          ) THEN 2
+          ) THEN 3
 
           -- 🔥 AI TAG MATCH
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.ai_tags) t WHERE t ILIKE $1
-          ) THEN 3
+          ) THEN 4
 
           -- 🔥 AI CATEGORY MATCH
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.ai_categories) c WHERE c ILIKE $1
-          ) THEN 4
+          ) THEN 5
 
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.keywords) k WHERE k ILIKE $1
-          ) THEN 5
+          ) THEN 6
 
-          ELSE 6
+          ELSE 7
         END,
         sp.abn_name
       LIMIT ${limit}
@@ -206,9 +228,7 @@ export async function GET(req: Request) {
             favicon_domain = host
           }
 
-        } catch {
-          // ignore bad values
-        }
+        } catch {}
       }
 
       return {

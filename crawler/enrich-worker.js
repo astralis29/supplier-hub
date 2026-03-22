@@ -66,6 +66,18 @@ function isValidCertification(text, cert) {
   return lower.includes(cert.toLowerCase())
 }
 
+/* ---------------- 🔥 REGEX FALLBACK ---------------- */
+
+function extractCertsFallback(text) {
+  const certs = []
+
+  if (/iso\s?9001/i.test(text)) certs.push("ISO 9001")
+  if (/iso\s?14001/i.test(text)) certs.push("ISO 14001")
+  if (/iso\s?45001/i.test(text)) certs.push("ISO 45001")
+
+  return certs
+}
+
 /* ---------------- DB FETCH ---------------- */
 
 async function getSuppliers() {
@@ -143,7 +155,7 @@ Return STRICT JSON:
   "summary": "business description",
   "categories": [],
   "tags": [],
-  "certifications": ["ISO 9001"],
+  "certifications": [],
   "confidence": 0.0
 }
 
@@ -178,8 +190,19 @@ ${text}
     if (!parsed.summary) return null
     if (isBadAIOutput(parsed.summary)) return null
 
-    parsed.certifications = parsed.certifications || []
+    // 🔥 COMBINE AI + REGEX
+    const regexCerts = extractCertsFallback(text)
+
+    parsed.certifications = [
+      ...new Set([
+        ...(parsed.certifications || []),
+        ...regexCerts
+      ])
+    ]
+
     parsed.confidence = parsed.confidence || 0.6
+
+    console.log("🧠 AI RESULT:", parsed)
 
     return parsed
 
@@ -197,7 +220,6 @@ ${text}
 
 async function saveEnrichment(abn, ai, rawText) {
 
-  // Save main AI data
   await pool.query(`
     UPDATE supplier_profiles
     SET 
@@ -215,10 +237,15 @@ async function saveEnrichment(abn, ai, rawText) {
     abn
   ])
 
-  // Save certifications (NEW)
+  // 🔥 SAVE CERTIFICATIONS (UPGRADED)
   for (const cert of ai.certifications) {
 
     if (!isValidCertification(rawText, cert)) continue
+
+    let confidence = 0.6
+
+    if ((ai.certifications || []).includes(cert)) confidence += 0.2
+    if (extractCertsFallback(rawText).includes(cert)) confidence += 0.2
 
     await pool.query(`
       INSERT INTO supplier_certifications (abn, standard, source, confidence)
@@ -227,8 +254,8 @@ async function saveEnrichment(abn, ai, rawText) {
     `, [
       abn,
       cert,
-      "ai_website",
-      0.7
+      "ai+regex",
+      Math.min(confidence, 1)
     ])
   }
 }

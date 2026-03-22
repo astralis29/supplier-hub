@@ -18,18 +18,33 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">ABN missing from URL</div>
   }
 
-  // 🔥 MAIN SUPPLIER
+  // 🔥 MAIN SUPPLIER + CERTIFICATIONS
   const result = await pool.query(`
     SELECT
       sp.*,
       abr.abn_status,
       abr.gst_registered,
       abr.postcode,
-      abr.state
+      abr.state,
+
+      COALESCE(
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'standard', sc.standard,
+            'confidence', sc.confidence
+          )
+        ) FILTER (WHERE sc.standard IS NOT NULL),
+        '[]'
+      ) AS certifications
+
     FROM supplier_profiles sp
     LEFT JOIN abr_businesses abr
       ON sp.abn = abr.abn
+    LEFT JOIN supplier_certifications sc
+      ON sp.abn = sc.abn
+
     WHERE TRIM(sp.abn) = TRIM($1)
+    GROUP BY sp.id, abr.abn_status, abr.gst_registered, abr.postcode, abr.state
     LIMIT 1
   `, [abn])
 
@@ -39,14 +54,13 @@ export default async function SupplierPage(props: any) {
     return <div className="p-10">Supplier not found</div>
   }
 
-  // 🔗 RELATED SUPPLIERS (SAFE + FALLBACK)
+  // 🔗 RELATED SUPPLIERS
   let relatedSuppliers: any[] = []
 
   try {
 
     if (supplier?.capabilities?.length > 0) {
 
-      // ✅ PRIMARY: MATCH BY CAPABILITIES
       const relatedResult = await pool.query(`
         SELECT 
           abn,
@@ -68,7 +82,6 @@ export default async function SupplierPage(props: any) {
 
     } else if (supplier?.industry || supplier?.sector) {
 
-      // ✅ FALLBACK: MATCH BY INDUSTRY / SECTOR
       const fallbackResult = await pool.query(`
         SELECT 
           abn,
@@ -130,6 +143,36 @@ export default async function SupplierPage(props: any) {
 
         </div>
       </div>
+
+      {/* 🛡️ CERTIFICATIONS (NEW) */}
+      {supplier.certifications?.length > 0 && (
+        <div className="border rounded-xl p-5 bg-green-50 border-green-200">
+          <h2 className="text-lg font-semibold mb-3 text-green-800">
+            🛡️ Certifications
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+
+            {supplier.certifications.map((cert: any, i: number) => (
+
+              <div
+                key={i}
+                className="bg-white border border-green-200 px-4 py-2 rounded-lg shadow-sm"
+              >
+                <div className="font-semibold text-green-700">
+                  {cert.standard}
+                </div>
+
+                <div className="text-xs text-gray-500">
+                  Confidence: {(cert.confidence * 100).toFixed(0)}%
+                </div>
+              </div>
+
+            ))}
+
+          </div>
+        </div>
+      )}
 
       {/* 🧠 AI SUMMARY */}
       {supplier.ai_summary && (
