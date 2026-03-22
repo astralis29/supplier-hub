@@ -54,6 +54,11 @@ export async function GET(req: Request) {
         sp.capabilities,
         sp.industry,
 
+        -- 🔥 AI FIELDS INCLUDED
+        sp.ai_summary,
+        sp.ai_tags,
+        sp.ai_categories,
+
         abr.abn_status,
         abr.gst_registered,
         abr.postcode,
@@ -88,6 +93,18 @@ export async function GET(req: Request) {
         OR EXISTS (
           SELECT 1 FROM unnest(sp.capabilities) c
           WHERE c ILIKE $1
+        )
+
+        -- 🔥 AI CATEGORIES
+        OR EXISTS (
+          SELECT 1 FROM unnest(sp.ai_categories) c
+          WHERE c ILIKE $1
+        )
+
+        -- 🔥 AI TAGS
+        OR EXISTS (
+          SELECT 1 FROM unnest(sp.ai_tags) t
+          WHERE t ILIKE $1
         )
       )
     `
@@ -124,19 +141,32 @@ export async function GET(req: Request) {
       index++
     }
 
-    /* ---------- 🔥 FINAL SMART RANKING ---------- */
+    /* ---------- 🔥 SMART AI RANKING ---------- */
 
     query += `
       ORDER BY
         CASE
           WHEN sp.abn_name ILIKE $1 THEN 1
+
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.capabilities) c WHERE c ILIKE $1
           ) THEN 2
+
+          -- 🔥 AI TAG MATCH
+          WHEN EXISTS (
+            SELECT 1 FROM unnest(sp.ai_tags) t WHERE t ILIKE $1
+          ) THEN 3
+
+          -- 🔥 AI CATEGORY MATCH
+          WHEN EXISTS (
+            SELECT 1 FROM unnest(sp.ai_categories) c WHERE c ILIKE $1
+          ) THEN 4
+
           WHEN EXISTS (
             SELECT 1 FROM unnest(sp.keywords) k WHERE k ILIKE $1
-          ) THEN 3
-          ELSE 4
+          ) THEN 5
+
+          ELSE 6
         END,
         sp.abn_name
       LIMIT ${limit}
