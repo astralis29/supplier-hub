@@ -14,6 +14,18 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 })
 
+/* ---------------- TIMEOUT FETCH (ADDED) ---------------- */
+
+function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeout)
+
+  return fetch(url, {
+    ...options,
+    signal: controller.signal
+  }).finally(() => clearTimeout(id))
+}
+
 /* ---------------- NORMALISER (CRITICAL FIX) ---------------- */
 
 function normalizeToArray(input) {
@@ -126,7 +138,7 @@ async function getSuppliers() {
 
 async function scrapeWebsite(url) {
   try {
-    const res = await fetch(url, { timeout: 10000 })
+    const res = await fetchWithTimeout(url, {}, 10000) // ✅ FIXED
     const html = await res.text()
 
     const cleaned = html
@@ -153,7 +165,7 @@ async function enrichWithAI(text, retries = 2) {
   try {
     console.log("🧠 Sending to AI...")
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetchWithTimeout("https://api.openai.com/v1/responses", { // ✅ FIXED
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -210,8 +222,6 @@ ${text}
       console.error("❌ JSON EXTRACT FAIL:", rawText)
       return null
     }
-
-    /* ---------------- NORMALISE (FIXED) ---------------- */
 
     parsed.summary =
       parsed.summary ||
@@ -278,7 +288,6 @@ ${text}
 
 async function saveEnrichment(abn, ai, rawText) {
 
-  // 🔥 EXTRA SAFETY
   if (!Array.isArray(ai.categories)) ai.categories = []
   if (!Array.isArray(ai.tags)) ai.tags = []
 
@@ -377,6 +386,8 @@ async function run() {
       }
 
       const ai = await enrichWithAI(text)
+
+      console.log("🧠 AI returned:", supplier.abn) // ✅ ADDED DEBUG LINE
 
       if (!ai) {
         console.log("❌ AI FAILED or SKIPPED:", supplier.abn)
